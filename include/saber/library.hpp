@@ -36,7 +36,7 @@ struct Library {
 		}
 
 #ifdef _WIN32
-		auto *ptr = ::GetProcAddress(name.data(), nullptr);
+		auto *ptr = ::GetProcAddress(m_handle, name.data());
 #else
 		auto *ptr = dlsym(m_handle, name.data());
 #endif

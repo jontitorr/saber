@@ -62,11 +62,11 @@ struct CommandOptions {
 	bool nsfw{};
 	bool owner_only{};
 	uint32_t cooldown{ 3000 };
-	std::vector<std::string> examples;
-	std::string subcommands;
+	std::vector<std::string> examples{};
+	std::string subcommands{};
 	bool activity{};
 	bool voice_only{};
-	std::string category;
+	std::string category{};
 };
 
 struct Command {

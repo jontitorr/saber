@@ -1,4 +1,3 @@
-#include <iostream>
 #include <saber/saber.hpp>
 #include <saber/util.hpp>
 
@@ -12,7 +11,7 @@ struct Eightball : Command {
 				  DIRNAME,
 				  true,
 				  {},
-				  false,
+				  {},
 				  {},
 				  {},
 				  { "eight-ball", "eightball" },
@@ -21,14 +20,10 @@ struct Eightball : Command {
 				  { ekizu::Permissions::SendMessages,
 				    ekizu::Permissions::EmbedLinks },
 				  {},
-				  false,
-				  false,
+				  {},
+				  {},
 				  3000,
-				  {},
-				  {},
-				  {},
-				  {},
-				  {} })
+			  })
 	{
 	}
 

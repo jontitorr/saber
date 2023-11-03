@@ -50,6 +50,11 @@ file(GLOB_RECURSE sources CONFIGURE_DEPENDS "include/*.hpp" "src/*.cpp")
 add_executable(${PROJECT_NAME} ${sources})
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
+
+if(WIN32)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
+endif()
+
 target_include_directories(
     ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
                            $<INSTALL_INTERFACE:include>
@@ -66,12 +71,9 @@ foreach(fullcmdname ${commands})
     target_include_directories(
         cmd_${cmdname} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
     )
-    target_link_libraries(cmd_${cmdname} PRIVATE ekizu)
+    target_link_libraries(cmd_${cmdname} PRIVATE ekizu spdlog::spdlog)
 endforeach(fullcmdname)
 
 if(${PROJECT_NAME}_INSTALL)
     install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 endif()
-
-target_compile_options(${PROJECT_NAME} PUBLIC -fsanitize=thread)
-target_link_options(${PROJECT_NAME} PUBLIC -fsanitize=thread)
