@@ -117,6 +117,7 @@ struct Command {
 	}
 #elif defined(_WIN32)
 #define COMMAND_ALLOC(name)                                      \
+	struct name;                                                 \
 	extern "C" {                                                 \
 	__declspec(dllexport) Command *init_command(Saber *parent) { \
 		return new name(parent);                                 \
@@ -134,6 +135,7 @@ struct Command {
 	}
 #elif defined(_WIN32)
 #define COMMAND_FREE(name)                                      \
+	struct name;                                                \
 	extern "C" {                                                \
 	__declspec(dllexport) void free_command(Command *command) { \
 		delete command;                                         \
