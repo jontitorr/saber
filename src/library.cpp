@@ -1,6 +1,6 @@
-#include <saber/library.hpp>
+#include <fmt/core.h>
 
-#include "fmt/core.h"
+#include <saber/library.hpp>
 
 namespace saber {
 Result<Library> Library::create(std::string_view path) {
@@ -11,12 +11,14 @@ Result<Library> Library::create(std::string_view path) {
 
 #ifdef _WIN32
 	auto *handle = LoadLibrary(path.data());
+	const auto last_error = GetLastError();
 #else
 	auto *handle = dlopen(path.data(), RTLD_NOW | RTLD_LOCAL);
+	const auto *last_error = dlerror();
 #endif
 
 	if (handle == nullptr) {
-		fmt::print("Failed to load library: {}\n", dlerror());
+		fmt::println("Failed to load library: {}", last_error);
 		return tl::make_unexpected(
 			std::make_error_code(std::errc::bad_address));
 	}
