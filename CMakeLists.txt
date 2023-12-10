@@ -46,21 +46,24 @@ cpmfindpackage(
 )
 
 file(GLOB_RECURSE sources CONFIGURE_DEPENDS "include/*.hpp" "src/*.cpp")
+list(FILTER sources EXCLUDE REGEX ".*main\\.cpp$")
 
-add_executable(${PROJECT_NAME} ${sources})
+add_library(${PROJECT_NAME}_lib ${sources})
+add_executable(${PROJECT_NAME} src/main.cpp)
 
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
+target_compile_features(${PROJECT_NAME}_lib PUBLIC cxx_std_17)
 
 if(WIN32)
     target_compile_definitions(${PROJECT_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
 endif()
 
 target_include_directories(
-    ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-                           $<INSTALL_INTERFACE:include>
+    ${PROJECT_NAME}_lib PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+                               $<INSTALL_INTERFACE:include>
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE ekizu spdlog::spdlog)
+target_link_libraries(${PROJECT_NAME}_lib PUBLIC ekizu spdlog::spdlog)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_lib)
 
 file(GLOB_RECURSE commands CONFIGURE_DEPENDS commands/*.cpp)
 
@@ -68,10 +71,7 @@ foreach(fullcmdname ${commands})
     get_filename_component(cmdname ${fullcmdname} NAME_WE)
     message(STATUS "Found command:'cmd_${cmdname}'")
     add_library(cmd_${cmdname} SHARED ${fullcmdname})
-    target_include_directories(
-        cmd_${cmdname} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-    )
-    target_link_libraries(cmd_${cmdname} PRIVATE ekizu spdlog::spdlog)
+    target_link_libraries(cmd_${cmdname} PRIVATE ${PROJECT_NAME}_lib)
 endforeach(fullcmdname)
 
 if(${PROJECT_NAME}_INSTALL)
