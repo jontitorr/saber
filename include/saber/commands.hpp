@@ -108,20 +108,19 @@ struct Command {
 };
 
 #if defined(__linux__) || defined(__APPLE__)
-#define COMMAND_ALLOC(name)                                       \
-	extern "C" {                                                  \
-	__attribute__((visibility("default"))) Command *init_command( \
-		Saber *parent) {                                          \
-		return new name(parent);                                  \
-	}                                                             \
+#define COMMAND_ALLOC(name)                                              \
+	extern "C" {                                                         \
+	__attribute__((visibility("default"))) saber::Command *init_command( \
+		saber::Saber *parent) {                                          \
+		return new name(parent);                                         \
+	}                                                                    \
 	}
 #elif defined(_WIN32)
-#define COMMAND_ALLOC(name)                                      \
-	struct name;                                                 \
-	extern "C" {                                                 \
-	__declspec(dllexport) Command *init_command(Saber *parent) { \
-		return new name(parent);                                 \
-	}                                                            \
+#define COMMAND_ALLOC(name)                                                    \
+	extern "C" {                                                               \
+	__declspec(dllexport) saber::Command *init_command(saber::Saber *parent) { \
+		return new name(parent);                                               \
+	}                                                                          \
 	}
 #endif
 
@@ -129,17 +128,16 @@ struct Command {
 #define COMMAND_FREE(name)                                    \
 	extern "C" {                                              \
 	__attribute__((visibility("default"))) void free_command( \
-		Command *command) {                                   \
+		saber::Command *command) {                            \
 		delete command;                                       \
 	}                                                         \
 	}
 #elif defined(_WIN32)
-#define COMMAND_FREE(name)                                      \
-	struct name;                                                \
-	extern "C" {                                                \
-	__declspec(dllexport) void free_command(Command *command) { \
-		delete command;                                         \
-	}                                                           \
+#define COMMAND_FREE(name)                                             \
+	extern "C" {                                                       \
+	__declspec(dllexport) void free_command(saber::Command *command) { \
+		delete command;                                                \
+	}                                                                  \
 	}
 #endif
 

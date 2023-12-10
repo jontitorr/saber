@@ -3,12 +3,12 @@
 
 using namespace saber;
 
-struct Beep : Command {
-	explicit Beep(Saber *creator)
+struct Ping : Command {
+	explicit Ping(Saber *creator)
 		: Command(
 			  creator,
 			  CommandOptions{
-				  "beep",
+				  "ping",
 				  DIRNAME,
 				  true,
 				  {},
@@ -16,8 +16,8 @@ struct Beep : Command {
 				  {},
 				  {},
 				  {},
-				  "beep",
-				  "Replies with boop.",
+				  "ping",
+				  "Replies with pong.",
 				  {ekizu::Permissions::SendMessages,
 				   ekizu::Permissions::EmbedLinks},
 				  {},
@@ -32,10 +32,10 @@ struct Beep : Command {
 		const ekizu::Message &message,
 		[[maybe_unused]] const std::vector<std::string> &args) override {
 		(void)bot->http.create_message(message.channel_id)
-			.content("Boop!")
+			.content("Pong!")
 			.send();
 	}
 };
 
-COMMAND_ALLOC(Beep)
-COMMAND_FREE(Beep)
+COMMAND_ALLOC(Ping)
+COMMAND_FREE(Ping)
