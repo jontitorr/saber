@@ -90,17 +90,9 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - { os: ubuntu-latest, arch: x64, binary_name: saber-linux-x64 }
-          - {
-              os: windows-latest,
-              arch: x64,
-              binary_name: saber-windows-x64.exe,
-            }
-          - {
-              os: windows-latest,
-              arch: x86,
-              binary_name: saber-windows-x86.exe,
-            }
+          - { os: ubuntu-22.04, arch: x64, binary_name: saber-linux-x64 }
+          - { os: windows-2022, arch: x64, binary_name: saber-windows-x64.exe }
+          - { os: windows-2022, arch: x86, binary_name: saber-windows-x86.exe }
 
     name: release-${{ matrix.config.os }}-${{ matrix.config.arch }}
     runs-on: ${{ matrix.config.os }}
