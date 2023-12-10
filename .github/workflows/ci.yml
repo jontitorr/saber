@@ -54,7 +54,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake g++-10 libssl-dev ninja-build rpm zlib1g-dev
+          sudo apt-get install -y cmake g++-12 libssl-dev ninja-build rpm zlib1g-dev
 
       - name: Add MSBuild to PATH (Windows)
         if: runner.os == 'Windows'
@@ -63,6 +63,8 @@ jobs:
       - name: Configure CMake (Linux)
         if: runner.os == 'Linux'
         run: cmake -S . -B build -G Ninja
+        env:
+          CXX: g++-12
 
       - name: Configure CMake (Windows x64)
         if: runner.os == 'Windows' && matrix.config.arch == 'x64'
