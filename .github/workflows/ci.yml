@@ -25,22 +25,22 @@ jobs:
       matrix:
         config:
           - {
-              os: ubuntu-latest,
+              os: ubuntu-22.04,
               arch: x64,
-              binary_path: "${{ github.workspace }}/build/saber",
-              output_name: "saber-linux-x64",
+              binary_path: saber,
+              output_name: saber-linux-x64,
             }
           - {
               os: windows-2022,
               arch: x64,
-              binary_path: "${{ github.workspace }}/build/Release/saber.exe",
-              output_name: "saber-windows-x64.exe",
+              binary_path: Release/saber.exe,
+              output_name: saber-windows-x64.exe,
             }
           - {
               os: windows-2022,
               arch: x86,
-              binary_path: "${{ github.workspace }}/build/Release/saber.exe",
-              output_name: "saber-windows-x86.exe",
+              binary_path: Release/saber.exe,
+              output_name: saber-windows-x86.exe,
             }
 
     name: build-${{ matrix.config.os }}-${{ matrix.config.arch }}
@@ -54,7 +54,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake g++-12 libssl-dev ninja-build rpm zlib1g-dev
+          sudo apt-get install -y cmake g++-10 libssl-dev ninja-build rpm zlib1g-dev
 
       - name: Add MSBuild to PATH (Windows)
         if: runner.os == 'Windows'
@@ -79,7 +79,8 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.config.output_name }}
-          path: ${{ matrix.config.binary_path }}
+          path: ./build/${matrix.config.binary_path}
+          if-no-files-found: error
 
   release:
     needs: build
