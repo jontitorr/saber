@@ -39,6 +39,7 @@ void Saber::handle_event(ekizu::Event ev) {
 					 users_cache.put(m.message.author.id, m.message.author);
 					 commands.process_commands(m.message);
 				 },
+				 [this](const ekizu::Log &l) { logger->debug(l.message); },
 				 [this](ekizu::Resumed) { logger->info("Resumed"); },
 				 [this](const auto &e) {
 					 logger->warn("Unhandled event: {}", typeid(e).name());

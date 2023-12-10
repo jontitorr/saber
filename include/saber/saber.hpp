@@ -8,12 +8,9 @@
 #include <ekizu/shard.hpp>
 #include <saber/commands.hpp>
 
-#include "ekizu/current_user.hpp"
-#include "ekizu/snowflake.hpp"
-
 namespace saber {
 struct Saber {
-	Saber(std::string_view token);
+	explicit Saber(std::string_view token);
 
 	void run();
 	void handle_event(ekizu::Event ev);
