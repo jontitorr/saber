@@ -1,10 +1,8 @@
 #include <algorithm>
 #include <saber/util.hpp>
 
-namespace saber::util
-{
-std::vector<std::string> split(std::string_view s, std::string_view delimiter)
-{
+namespace saber::util {
+std::vector<std::string> split(std::string_view s, std::string_view delimiter) {
 	std::vector<std::string> ret;
 	size_t pos{};
 	size_t prev{};
@@ -18,30 +16,22 @@ std::vector<std::string> split(std::string_view s, std::string_view delimiter)
 	return ret;
 }
 
-std::string &ltrim(std::string &s)
-{
-	s.erase(s.begin(),
-		std::find_if(s.begin(), s.end(), [](unsigned char ch) {
-			return std::isspace(ch) == 0;
-		}));
+std::string &ltrim(std::string &s) {
+	s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
+				return std::isspace(ch) == 0;
+			}));
 
 	return s;
 }
 
-std::string &rtrim(std::string &s)
-{
+std::string &rtrim(std::string &s) {
 	s.erase(std::find_if(s.rbegin(), s.rend(),
-			     [](unsigned char ch) {
-				     return std::isspace(ch) == 0;
-			     })
-			.base(),
-		s.end());
+						 [](unsigned char ch) { return std::isspace(ch) == 0; })
+				.base(),
+			s.end());
 
 	return s;
 }
 
-std::string &trim(std::string &s)
-{
-	return ltrim(rtrim(s));
-}
-} // namespace saber::util
+std::string &trim(std::string &s) { return ltrim(rtrim(s)); }
+}  // namespace saber::util

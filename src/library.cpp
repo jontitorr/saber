@@ -1,9 +1,9 @@
 #include <saber/library.hpp>
 
-namespace saber
-{
-Result<Library> Library::create(std::string_view path)
-{
+#include "fmt/core.h"
+
+namespace saber {
+Result<Library> Library::create(std::string_view path) {
 	if (path.empty()) {
 		return tl::make_unexpected(
 			std::make_error_code(std::errc::bad_address));
@@ -16,25 +16,21 @@ Result<Library> Library::create(std::string_view path)
 #endif
 
 	if (handle == nullptr) {
+		fmt::print("Failed to load library: {}\n", dlerror());
 		return tl::make_unexpected(
 			std::make_error_code(std::errc::bad_address));
 	}
 
-	return Library{ handle };
+	return Library{handle};
 }
 
-Library::Library(dlopen_handle_t handle)
-	: m_handle{ handle }
-{
-}
+Library::Library(dlopen_handle_t handle) : m_handle{handle} {}
 
-Library::Library(Library &&other) noexcept : m_handle{ other.m_handle }
-{
+Library::Library(Library &&other) noexcept : m_handle{other.m_handle} {
 	other.m_handle = nullptr;
 }
 
-Library &Library::operator=(Library &&other) noexcept
-{
+Library &Library::operator=(Library &&other) noexcept {
 	if (this != &other) {
 		m_handle = other.m_handle;
 		other.m_handle = nullptr;
@@ -43,11 +39,8 @@ Library &Library::operator=(Library &&other) noexcept
 	return *this;
 }
 
-Library::~Library()
-{
-	if (m_handle == nullptr) {
-		return;
-	}
+Library::~Library() {
+	if (m_handle == nullptr) { return; }
 
 #ifdef _WIN32
 	FreeLibrary(m_handle);
@@ -55,4 +48,4 @@ Library::~Library()
 	dlclose(m_handle);
 #endif
 }
-} // namespace saber
+}  // namespace saber

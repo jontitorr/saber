@@ -6,7 +6,7 @@
 #include <string>
 
 #ifdef _WIN32
-#define _WINSOCKAPI_ // stops windows.h including winsock.h
+#define _WINSOCKAPI_  // stops windows.h including winsock.h
 #include <windows.h>
 using dlopen_handle_t = HMODULE;
 #else
@@ -14,13 +14,14 @@ using dlopen_handle_t = HMODULE;
 using dlopen_handle_t = void *;
 #endif
 
-namespace saber
-{
-template <typename T> using Result = ekizu::Result<T>;
+namespace saber {
+template <typename T>
+using Result = ekizu::Result<T>;
 
 /**
- * @brief Simple cross-platform wrapper for platform-specific dlopen()-like functions. Supports loading instances of
- * objects with supporting allocater and deallocater functions.
+ * @brief Simple cross-platform wrapper for platform-specific dlopen()-like
+ * functions. Supports loading instances of objects with supporting allocater
+ * and deallocater functions.
  *
  * @tparam T The type of object to load and manage.
  * @tparam Args The types of the arguments for the allocater.
@@ -28,8 +29,8 @@ template <typename T> using Result = ekizu::Result<T>;
 struct Library {
 	static Result<Library> create(std::string_view path);
 
-	template <typename T> Result<T> get(std::string_view name) const
-	{
+	template <typename T>
+	Result<T> get(std::string_view name) const {
 		if (m_handle == nullptr) {
 			return tl::make_unexpected(
 				std::make_error_code(std::errc::bad_address));
@@ -55,12 +56,12 @@ struct Library {
 	Library &operator=(Library &&) noexcept;
 	~Library();
 
-    private:
+   private:
 	Library(dlopen_handle_t handle);
 
 	/// Our handle to the shared library.
 	dlopen_handle_t m_handle{};
 };
-} // namespace saber
+}  // namespace saber
 
-#endif // SABER_LIBRARY_HPP
+#endif	// SABER_LIBRARY_HPP
