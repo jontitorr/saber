@@ -79,7 +79,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.config.output_name }}
-          path: ./build/${matrix.config.binary_path}
+          path: ./build/${{ matrix.config.binary_path }}
           if-no-files-found: error
 
   release:
