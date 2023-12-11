@@ -77,11 +77,19 @@ jobs:
       - name: Build
         run: cmake --build build --config Release
 
+      - name: Move binary (Linux)
+        if: runner.os == 'Linux'
+        run: mv build/${{ matrix.config.binary_path }} build/${{ matrix.config.output_name }}
+
+      - name: Move binary (Windows)
+        if: runner.os == 'Windows'
+        run: Move-Item build/${{ matrix.config.binary_path }} build/${{ matrix.config.output_name }}
+
       - name: Upload Binary
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.config.output_name }}
-          path: ./build/${{ matrix.config.binary_path }}
+          path: ./build/${{ matrix.config.output_name }}
           if-no-files-found: error
 
   release:
@@ -136,28 +144,20 @@ jobs:
       next: ${{ steps.semver.outputs.next }}
 
   upload:
-    strategy:
-      fail-fast: true
-      matrix:
-        artifact:
-          ["saber-linux-x64", "saber-windows-x64.exe", "saber-windows-x86.exe"]
-
     needs: release
-    name: upload-${{ matrix.artifact }}
     runs-on: ubuntu-22.04
     if: github.event_name == 'push'
 
     steps:
-      - name: Download artifact
-        id: download
+      - name: Download all artifacts
         uses: actions/download-artifact@v3
         with:
-          name: ${{ matrix.artifact }}
+          path: .
 
-      - name: Upload artifact to release
+      - name: Upload artifacts to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ github.token }}
-          file: ${{ steps.download.outputs.download-path }}
-          asset_name: ${{ matrix.artifact }}
+          file_glob: true
+          file: "**/*"
           tag: ${{ needs.release.outputs.next }}-dev
