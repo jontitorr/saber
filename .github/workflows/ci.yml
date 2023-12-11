@@ -132,6 +132,9 @@ jobs:
           body: ${{ steps.changelog.outputs.changes }}
           token: ${{ github.token }}
 
+    outputs:
+      next: ${{ steps.semver.outputs.next }}
+
   upload:
     strategy:
       fail-fast: true
@@ -145,14 +148,6 @@ jobs:
     if: github.event_name == 'push'
 
     steps:
-      - name: Get Current Version
-        id: semver
-        uses: ietf-tools/semver-action@v1
-        with:
-          token: ${{ github.token }}
-          branch: dev
-          noVersionBumpBehavior: silent
-
       - name: Download artifact
         uses: actions/download-artifact@v3
         with:
@@ -163,4 +158,4 @@ jobs:
         with:
           repo_token: ${{ github.token }}
           file: ${{ matrix.artifact }}
-          tag: ${{ steps.semver.outputs.current }}-dev
+          tag: ${{ needs.release.outputs.next }}-dev
