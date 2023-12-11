@@ -153,12 +153,11 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: ${{ matrix.artifact }}
-          path: ${{ github.workspace }}/artifacts
 
       - name: Upload artifact to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ github.token }}
-          file: ${{ steps.download.outputs.download-path }}/${{ matrix.artifact }}
+          file: ${{ steps.download.outputs.download-path }}
           asset_name: ${{ matrix.artifact }}
           tag: ${{ needs.release.outputs.next }}-dev
