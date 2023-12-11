@@ -153,6 +153,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: ${{ matrix.artifact }}
+          path: ${{ github.workspace }}/artifacts
 
       - name: Upload artifact to release
         uses: svenstaro/upload-release-action@v2
