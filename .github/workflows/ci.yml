@@ -172,7 +172,7 @@ jobs:
         uses: requarks/changelog-action@v1
         with:
           token: ${{ github.token }}
-          fromTag: ${{ steps.latest-tag.outputs.tag }}
+          fromTag: ${{ steps.semver.outputs.current }}${{ env.TAG_SUFFIX }}
           toTag: ${{ steps.semver.outputs.next }}${{ env.TAG_SUFFIX }}
           writeToFile: false
 
