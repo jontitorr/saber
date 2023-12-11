@@ -21,6 +21,7 @@ on:
       - "**CMakeLists.txt"
 
 env:
+  BRANCH_NAME: ${{ github.ref == 'refs/heads/dev' && 'dev' || 'main' }}
   PRERELEASE: ${{ github.ref == 'refs/heads/dev' && 'true' || 'false' }}
   TAG_SUFFIX: ${{ github.ref == 'refs/heads/dev' && '-dev' || '' }}
 
@@ -39,7 +40,7 @@ jobs:
       - uses: dorny/paths-filter@v2
         id: filter
         with:
-          base: ${{ github.event.pull_request.base.sha || github.sha }}
+          base: ${{ env.BRANCH_NAME }}
           filters: |
             src:
               - '**/*.cpp'
@@ -152,7 +153,7 @@ jobs:
         uses: ietf-tools/semver-action@v1
         with:
           token: ${{ github.token }}
-          branch: ${{ github.ref == 'refs/heads/dev' && 'dev' || 'main' }}
+          branch: ${{ env.BRANCH_NAME }}
           fromTag: ${{ steps.latest-tag.outputs.tag }}
 
       - name: Create Draft Release
