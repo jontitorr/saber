@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches:
+      - main
       - dev
     paths:
       - "**ci.yml"
@@ -11,12 +12,17 @@ on:
       - "**CMakeLists.txt"
   pull_request:
     branches:
+      - main
       - dev
     paths:
       - "**ci.yml"
       - "**.hpp"
       - "**.cpp"
       - "**CMakeLists.txt"
+
+env:
+  PRERELEASE: ${{ github.ref == 'refs/heads/dev' && 'true' || 'false' }}
+  TAG_SUFFIX: ${{ github.ref == 'refs/heads/dev' && '-dev' || '' }}
 
 jobs:
   build:
@@ -101,21 +107,34 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Get Latest Tag
+        id: latest-tag
+        run: |
+          if [[ ${{ github.ref }} == 'refs/heads/dev' ]]; then
+            latest_tag=$(git tag -l | grep "\-dev" | sort -V | tail -n 1)
+          else
+            latest_tag=$(git tag -l | grep -v "\-dev" | sort -V | tail -n 1)
+          fi
+
+          echo "::set-output name=tag::$latest_tag"
+        shell: bash
+
       - name: Get Next Version
         id: semver
         uses: ietf-tools/semver-action@v1
         with:
           token: ${{ github.token }}
-          branch: dev
+          branch: ${{ github.ref == 'refs/heads/dev' && 'dev' || 'main' }}
+          fromTag: ${{ steps.latest-tag.outputs.tag }}
 
       - name: Create Draft Release
         uses: ncipollo/release-action@v1.12.0
         with:
-          prerelease: true
+          prerelease: ${{ env.PRERELEASE }}
           draft: false
           commit: ${{ github.sha }}
-          tag: ${{ steps.semver.outputs.next }}-dev
-          name: ${{ steps.semver.outputs.next }}-dev
+          tag: ${{ steps.semver.outputs.next }}${{ env.TAG_SUFFIX }}
+          name: ${{ steps.semver.outputs.next }}${{ env.TAG_SUFFIX }}
           body: "*pending*"
           token: ${{ github.token }}
 
@@ -124,19 +143,19 @@ jobs:
         uses: requarks/changelog-action@v1
         with:
           token: ${{ github.token }}
-          tag: ${{ steps.semver.outputs.next }}-dev
+          tag: ${{ steps.semver.outputs.next }}${{ env.TAG_SUFFIX }}
           writeToFile: false
 
       - name: Create Release
         uses: ncipollo/release-action@v1.12.0
         with:
-          prerelease: true
+          prerelease: ${{ env.PRERELEASE }}
           allowUpdates: true
           draft: false
           makeLatest: true
           commit: ${{ github.sha }}
-          tag: ${{ steps.semver.outputs.next }}-dev
-          name: ${{ steps.semver.outputs.next }}-dev
+          tag: ${{ steps.semver.outputs.next }}${{ env.TAG_SUFFIX }}
+          name: ${{ steps.semver.outputs.next }}${{ env.TAG_SUFFIX }}
           body: ${{ steps.changelog.outputs.changes }}
           token: ${{ github.token }}
 
@@ -160,4 +179,4 @@ jobs:
           repo_token: ${{ github.token }}
           file_glob: true
           file: "**/*"
-          tag: ${{ needs.release.outputs.next }}-dev
+          tag: ${{ needs.release.outputs.next }}${{ env.TAG_SUFFIX }}
