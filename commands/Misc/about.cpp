@@ -28,19 +28,12 @@ struct About : Command {
 			  }) {}
 
 	void setup() override {
-		bot->logger->info("Setting up About command");
-
 		bot->http.get_user(bot->owner_id)
 			.send()
 			.map([this](const ekizu::User &owner) {
-				bot->logger->info(
-					"Fetched owner: {} from the API", owner.username);
 				bot->users_cache.put(owner.id, owner);
 				bot->http.get_current_user().send().map(
 					[this, &owner](const ekizu::User &user) {
-						bot->logger->info(
-							"Fetched our own user: {} from the API",
-							user.username);
 						bot->users_cache.put(user.id, user);
 
 						about_embed =
@@ -69,8 +62,6 @@ struct About : Command {
 									{fmt::format("Made by {}", owner.username),
 									 owner.display_avatar_url()})
 								.build();
-
-						bot->logger->info("About command setup complete");
 					});
 			});
 	}
