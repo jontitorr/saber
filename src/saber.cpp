@@ -11,9 +11,10 @@ overload(Func...) -> overload<Func...>;
 }  // namespace
 
 namespace saber {
-Saber::Saber(std::string_view token)
+Saber::Saber(std::string_view token, ekizu::Snowflake owner_id_)
 	: commands{this},
 	  http{token},
+	  owner_id{owner_id_},
 	  shard{ekizu::ShardId::ONE, token, ekizu::Intents::AllIntents} {
 	logger = spdlog::stdout_color_mt("saber");
 	spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v");
