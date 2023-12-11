@@ -21,7 +21,7 @@ on:
 jobs:
   build:
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         config:
           - {
@@ -86,16 +86,7 @@ jobs:
 
   release:
     needs: build
-    strategy:
-      fail-fast: false
-      matrix:
-        config:
-          - { os: ubuntu-22.04, arch: x64, binary_name: saber-linux-x64 }
-          - { os: windows-2022, arch: x64, binary_name: saber-windows-x64.exe }
-          - { os: windows-2022, arch: x86, binary_name: saber-windows-x86.exe }
-
-    name: release-${{ matrix.config.os }}-${{ matrix.config.arch }}
-    runs-on: ${{ matrix.config.os }}
+    runs-on: ubuntu-22.04
     if: github.event_name == 'push'
 
     steps:
@@ -141,14 +132,35 @@ jobs:
           body: ${{ steps.changelog.outputs.changes }}
           token: ${{ github.token }}
 
-      - name: Download binaries
+  upload:
+    strategy:
+      fail-fast: true
+      matrix:
+        artifact:
+          ["saber-linux-x64", "saber-windows-x64.exe", "saber-windows-x86.exe"]
+
+    needs: release
+    name: upload-${{ matrix.artifact }}
+    runs-on: ubuntu-22.04
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Get Current Version
+        id: semver
+        uses: ietf-tools/semver-action@v1
+        with:
+          token: ${{ github.token }}
+          branch: dev
+          noVersionBumpBehavior: silent
+
+      - name: Download artifact
         uses: actions/download-artifact@v3
         with:
-          name: ${{ matrix.config.binary_name }}
+          name: ${{ matrix.artifact }}
 
-      - name: Upload binaries to release
+      - name: Upload artifact to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ github.token }}
-          file: ${{ matrix.config.binary_name }}
-          tag: ${{ steps.semver.outputs.next }}-dev
+          file: ${{ matrix.artifact }}
+          tag: ${{ steps.semver.outputs.current }}-dev
