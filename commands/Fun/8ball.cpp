@@ -1,4 +1,3 @@
-#include <iostream>
 #include <saber/saber.hpp>
 #include <saber/util.hpp>
 
@@ -6,39 +5,31 @@ using namespace saber;
 
 struct Eightball : Command {
 	explicit Eightball(Saber *creator)
-		: Command(creator,
+		: Command(
+			  creator,
 			  CommandOptions{
 				  "8ball",
 				  DIRNAME,
 				  true,
 				  {},
-				  false,
 				  {},
 				  {},
-				  { "eight-ball", "eightball" },
+				  {},
+				  {"eight-ball", "eightball"},
 				  "8ball <question>",
 				  "Asks the Magic 8-Ball for some psychic wisdom.",
-				  { ekizu::Permissions::SendMessages,
-				    ekizu::Permissions::EmbedLinks },
+				  {ekizu::Permissions::SendMessages,
+				   ekizu::Permissions::EmbedLinks},
 				  {},
-				  false,
-				  false,
+				  {},
+				  {},
 				  3000,
-				  {},
-				  {},
-				  {},
-				  {},
-				  {} })
-	{
-	}
+			  }) {}
 
-	void setup() override
-	{
-	}
+	void setup() override {}
 
 	void execute(const ekizu::Message &message,
-		     const std::vector<std::string> &args) override
-	{
+				 const std::vector<std::string> &args) override {
 		if (args.empty()) {
 			(void)bot->http.create_message(message.channel_id)
 				.content("You need to ask a question!")
@@ -54,7 +45,7 @@ struct Eightball : Command {
 			.send();
 	}
 
-    private:
+   private:
 	std::vector<std::string> responses{
 		"It is certain.",
 		"It is decidedly so.",

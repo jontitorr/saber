@@ -1,0 +1,211 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+    paths:
+      - "**ci.yml"
+      - "**.hpp"
+      - "**.cpp"
+      - "**CMakeLists.txt"
+  pull_request:
+    branches:
+      - main
+      - dev
+    paths:
+      - "**ci.yml"
+      - "**.hpp"
+      - "**.cpp"
+      - "**CMakeLists.txt"
+
+env:
+  BRANCH_NAME: ${{ github.ref == 'refs/heads/dev' && 'dev' || 'main' }}
+  PRERELEASE: ${{ github.ref == 'refs/heads/dev' && 'true' || 'false' }}
+  TAG_SUFFIX: ${{ github.ref == 'refs/heads/dev' && '-dev' || '' }}
+
+jobs:
+  changes:
+    runs-on: ubuntu-22.04
+    outputs:
+      build: ${{ steps.filter.outputs.src }}
+      ci: ${{ steps.filter.outputs.ci }}
+
+    steps:
+      - name: Checkout
+        if: github.event_name == 'push'
+        uses: actions/checkout@v3
+
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          base: ${{ env.BRANCH_NAME }}
+          filters: |
+            src:
+              - '**/*.cpp'
+              - '**/*.hpp'
+              - '**/CMakeLists.txt'
+            ci:
+              - '.github/workflows/ci.yml'
+  build:
+    needs: changes
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {
+              os: ubuntu-22.04,
+              arch: x64,
+              binary_path: saber,
+              output_name: saber-linux-x64,
+            }
+          - {
+              os: windows-2022,
+              arch: x64,
+              binary_path: Release/saber.exe,
+              output_name: saber-windows-x64.exe,
+            }
+          - {
+              os: windows-2022,
+              arch: x86,
+              binary_path: Release/saber.exe,
+              output_name: saber-windows-x86.exe,
+            }
+
+    name: build-${{ matrix.config.os }}-${{ matrix.config.arch }}
+    runs-on: ${{ matrix.config.os }}
+    if: needs.changes.outputs.build == 'true'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++-12 libssl-dev ninja-build rpm zlib1g-dev
+
+      - name: Add MSBuild to PATH (Windows)
+        if: runner.os == 'Windows'
+        uses: microsoft/setup-msbuild@v1.1
+
+      - name: Configure CMake (Linux)
+        if: runner.os == 'Linux'
+        run: cmake -S . -B build -G Ninja
+        env:
+          CXX: g++-12
+
+      - name: Configure CMake (Windows x64)
+        if: runner.os == 'Windows' && matrix.config.arch == 'x64'
+        run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -T host=x64
+
+      - name: Configure CMake (Windows x86)
+        if: runner.os == 'Windows' && matrix.config.arch == 'x86'
+        run: cmake -S . -B build -D net_FORCE_BUILD_OPENSSL=ON -G "Visual Studio 17 2022" -A Win32 -T host=x86
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Move binary (Linux)
+        if: runner.os == 'Linux'
+        run: mv build/${{ matrix.config.binary_path }} build/${{ matrix.config.output_name }}
+
+      - name: Move binary (Windows)
+        if: runner.os == 'Windows'
+        run: Move-Item build/${{ matrix.config.binary_path }} build/${{ matrix.config.output_name }}
+
+      - name: Upload Binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.config.output_name }}
+          path: ./build/${{ matrix.config.output_name }}
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-22.04
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Get Latest Tag
+        id: latest-tag
+        run: |
+          if [[ "${{ github.ref }}" == 'refs/heads/dev' ]]; then
+            latest_tag=$(git tag -l | grep "\-dev" | sort -V | tail -n 1 || true)
+          else
+            latest_tag=$(git tag -l | grep -v "\-dev" | sort -V | tail -n 1 || true)
+          fi
+
+          if [[ -z $latest_tag ]]; then
+            latest_tag=""
+          fi
+
+          echo "::set-output name=tag::$latest_tag"
+        shell: bash
+
+      - name: Get Next Version
+        id: semver
+        uses: ietf-tools/semver-action@v1
+        with:
+          token: ${{ github.token }}
+          branch: ${{ env.BRANCH_NAME }}
+          fromTag: ${{ steps.latest-tag.outputs.tag }}
+
+      - name: Create Draft Release
+        uses: ncipollo/release-action@v1.12.0
+        with:
+          prerelease: ${{ env.PRERELEASE }}
+          draft: false
+          commit: ${{ github.sha }}
+          tag: ${{ steps.semver.outputs.next }}${{ env.TAG_SUFFIX }}
+          name: ${{ steps.semver.outputs.next }}${{ env.TAG_SUFFIX }}
+          body: "*pending*"
+          token: ${{ github.token }}
+
+      - name: Update CHANGELOG
+        id: changelog
+        uses: requarks/changelog-action@v1
+        with:
+          token: ${{ github.token }}
+          tag: ${{ steps.semver.outputs.next }}${{ env.TAG_SUFFIX }}
+          writeToFile: false
+
+      - name: Create Release
+        uses: ncipollo/release-action@v1.12.0
+        with:
+          prerelease: ${{ env.PRERELEASE }}
+          allowUpdates: true
+          draft: false
+          makeLatest: true
+          commit: ${{ github.sha }}
+          tag: ${{ steps.semver.outputs.next }}${{ env.TAG_SUFFIX }}
+          name: ${{ steps.semver.outputs.next }}${{ env.TAG_SUFFIX }}
+          body: ${{ steps.changelog.outputs.changes }}
+          token: ${{ github.token }}
+
+    outputs:
+      next: ${{ steps.semver.outputs.next }}
+
+  upload:
+    needs: release
+    runs-on: ubuntu-22.04
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: .
+
+      - name: Upload artifacts to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ github.token }}
+          file_glob: true
+          file: "**/*"
+          tag: ${{ needs.release.outputs.next }}${{ env.TAG_SUFFIX }}
