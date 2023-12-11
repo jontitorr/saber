@@ -15,7 +15,7 @@ Saber::Saber(std::string_view token)
 	: commands{this},
 	  http{token},
 	  shard{ekizu::ShardId::ONE, token, ekizu::Intents::AllIntents} {
-	logger = spdlog::stdout_color_mt("logger");
+	logger = spdlog::stdout_color_mt("saber");
 	spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v");
 	spdlog::set_level(spdlog::level::debug);
 }
