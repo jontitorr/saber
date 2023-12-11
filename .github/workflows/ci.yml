@@ -25,9 +25,32 @@ env:
   TAG_SUFFIX: ${{ github.ref == 'refs/heads/dev' && '-dev' || '' }}
 
 jobs:
+  changes:
+    runs-on: ubuntu-22.04
+    outputs:
+      build: ${{ steps.filter.outputs.src }}
+      ci: ${{ steps.filter.outputs.ci }}
+
+    steps:
+      - name: Checkout
+        if: github.event_name == 'push'
+        uses: actions/checkout@v3
+
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          base: ${{ github.event.pull_request.base.sha || github.sha }}
+          filters: |
+            src:
+              - '**/*.cpp'
+              - '**/*.hpp'
+              - '**/CMakeLists.txt'
+            ci:
+              - '.github/workflows/ci.yml'
   build:
+    needs: changes
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         config:
           - {
@@ -51,6 +74,7 @@ jobs:
 
     name: build-${{ matrix.config.os }}-${{ matrix.config.arch }}
     runs-on: ${{ matrix.config.os }}
+    if: needs.changes.outputs.build == 'true'
 
     steps:
       - name: Checkout
@@ -110,10 +134,14 @@ jobs:
       - name: Get Latest Tag
         id: latest-tag
         run: |
-          if [[ ${{ github.ref }} == 'refs/heads/dev' ]]; then
-            latest_tag=$(git tag -l | grep "\-dev" | sort -V | tail -n 1)
+          if [[ "${{ github.ref }}" == 'refs/heads/dev' ]]; then
+            latest_tag=$(git tag -l | grep "\-dev" | sort -V | tail -n 1 || true)
           else
-            latest_tag=$(git tag -l | grep -v "\-dev" | sort -V | tail -n 1)
+            latest_tag=$(git tag -l | grep -v "\-dev" | sort -V | tail -n 1 || true)
+          fi
+
+          if [[ -z $latest_tag ]]; then
+            latest_tag=""
           fi
 
           echo "::set-output name=tag::$latest_tag"
