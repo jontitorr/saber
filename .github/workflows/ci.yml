@@ -26,30 +26,7 @@ env:
   TAG_SUFFIX: ${{ github.ref == 'refs/heads/dev' && '-dev' || '' }}
 
 jobs:
-  changes:
-    runs-on: ubuntu-22.04
-    outputs:
-      build: ${{ steps.filter.outputs.src }}
-      ci: ${{ steps.filter.outputs.ci }}
-
-    steps:
-      - name: Checkout
-        if: github.event_name == 'push'
-        uses: actions/checkout@v3
-
-      - uses: dorny/paths-filter@v2
-        id: filter
-        with:
-          base: ${{ env.BRANCH_NAME }}
-          filters: |
-            src:
-              - '**/*.cpp'
-              - '**/*.hpp'
-              - '**/CMakeLists.txt'
-            ci:
-              - '.github/workflows/ci.yml'
   build:
-    needs: changes
     strategy:
       fail-fast: false
       matrix:
@@ -75,7 +52,6 @@ jobs:
 
     name: build-${{ matrix.config.os }}-${{ matrix.config.arch }}
     runs-on: ${{ matrix.config.os }}
-    if: needs.changes.outputs.build == 'true'
 
     steps:
       - name: Checkout
