@@ -87,6 +87,16 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y cmake g++-12 libssl-dev ninja-build rpm zlib1g-dev
 
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        uses: johnwason/vcpkg-action@v5
+        id: vcpkg
+        with:
+          pkgs: openssl zlib
+          triplet: ${{ matrix.config.arch }}-windows-static
+          cache-key: windows-${{ matrix.config.arch }}-vcpkg
+          token: ${{ github.token }}
+
       - name: Add MSBuild to PATH (Windows)
         if: runner.os == 'Windows'
         uses: microsoft/setup-msbuild@v1.1
@@ -99,11 +109,11 @@ jobs:
 
       - name: Configure CMake (Windows x64)
         if: runner.os == 'Windows' && matrix.config.arch == 'x64'
-        run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -T host=x64
+        run: cmake ${{ steps.vcpkg.outputs.vcpkg-cmake-config }} -S . -B build -G "Visual Studio 17 2022" -A x64 -T host=x64
 
       - name: Configure CMake (Windows x86)
         if: runner.os == 'Windows' && matrix.config.arch == 'x86'
-        run: cmake -S . -B build -D net_FORCE_BUILD_OPENSSL=ON -G "Visual Studio 17 2022" -A Win32 -T host=x86
+        run: cmake ${{ steps.vcpkg.outputs.vcpkg-cmake-config }} -S . -B build -G "Visual Studio 17 2022" -A Win32 -T host=x86
 
       - name: Build
         run: cmake --build build --config Release
