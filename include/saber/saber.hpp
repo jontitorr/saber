@@ -12,8 +12,8 @@ namespace saber {
 struct Saber {
 	explicit Saber(std::string_view token);
 
-	void run();
-	void handle_event(ekizu::Event ev);
+	void run(const boost::asio::yield_context &yield);
+	void handle_event(ekizu::Event ev, const boost::asio::yield_context &yield);
 
 	ekizu::Snowflake bot_id;
 	CommandLoader commands;

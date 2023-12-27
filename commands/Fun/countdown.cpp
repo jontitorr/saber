@@ -26,10 +26,9 @@ struct Countdown : Command {
 				  0,
 			  }) {}
 
-	void setup() override {}
-
 	void execute(const ekizu::Message &message,
-				 const std::vector<std::string> &args) override {
+				 const std::vector<std::string> &args,
+				 const boost::asio::yield_context &yield) override {
 		if (!args.empty()) { return; }
 
 		const std::vector<std::string> countdown{
@@ -38,13 +37,13 @@ struct Countdown : Command {
 		for (const std::string &num : countdown) {
 			(void)bot->http.create_message(message.channel_id)
 				.content("**:" + num + ":**")
-				.send();
+				.send(yield);
 			std::this_thread::sleep_for(std::chrono::seconds(1));
 		}
 
 		(void)bot->http.create_message(message.channel_id)
 			.content("**:ok:** DING DING DING")
-			.send();
+			.send(yield);
 	}
 };
 

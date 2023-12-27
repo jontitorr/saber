@@ -26,10 +26,9 @@ struct CSS : Command {
 				  0,
 			  }) {}
 
-	void setup() override {}
-
 	void execute(const ekizu::Message &message,
-				 const std::vector<std::string> &args) override {
+				 const std::vector<std::string> &args,
+				 const boost::asio::yield_context &yield) override {
 		if (!args.empty()) { return; }
 
 		(void)bot->http.create_message(message.channel_id)
@@ -38,7 +37,7 @@ struct CSS : Command {
 				"giphy.gif?cid="
 				"ecf05e47ckbtzm84p629vw655dbua1qzaiw8tl46ejp4f0xj&ep=v1_gifs_"
 				"search&rid=giphy.gif&ct=g")
-			.send();
+			.send(yield);
 	}
 };
 

@@ -26,17 +26,18 @@ struct Hype : Command {
 				  0,
 			  }) {}
 
-	void setup() override {}
-
 	void execute(const ekizu::Message &message,
-				 const std::vector<std::string> &args) override {
+				 const std::vector<std::string> &args,
+				 const boost::asio::yield_context &yield) override {
 		if (!args.empty()) { return; }
 
 		const std::string &selectedHype =
 			hypu[util::get_random_number<size_t>(0, hypu.size() - 1)];
 		std::string msg = ":train2: CHOO CHOO " + selectedHype;
 
-		(void)bot->http.create_message(message.channel_id).content(msg).send();
+		(void)bot->http.create_message(message.channel_id)
+			.content(msg)
+			.send(yield);
 	}
 
    private:

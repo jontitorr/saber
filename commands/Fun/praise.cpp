@@ -26,15 +26,14 @@ struct Praise : Command {
 				  0,
 			  }) {}
 
-	void setup() override {}
-
 	void execute(const ekizu::Message &message,
-				 const std::vector<std::string> &args) override {
+				 const std::vector<std::string> &args,
+				 const boost::asio::yield_context &yield) override {
 		if (!args.empty()) { return; }
 
 		(void)bot->http.create_message(message.channel_id)
 			.content("https://i.imgur.com/K8ySn3e.gif")
-			.send();
+			.send(yield);
 	}
 };
 

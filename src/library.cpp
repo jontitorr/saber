@@ -4,10 +4,7 @@
 
 namespace saber {
 Result<Library> Library::create(std::string_view path) {
-	if (path.empty()) {
-		return tl::make_unexpected(
-			std::make_error_code(std::errc::bad_address));
-	}
+	if (path.empty()) { return boost::system::errc::bad_address; }
 
 #ifdef _WIN32
 	auto *handle = LoadLibrary(path.data());
@@ -19,8 +16,7 @@ Result<Library> Library::create(std::string_view path) {
 
 	if (handle == nullptr) {
 		fmt::println("Failed to load library: {}", last_error);
-		return tl::make_unexpected(
-			std::make_error_code(std::errc::bad_address));
+		return boost::system::errc::bad_address;
 	}
 
 	return Library{handle};

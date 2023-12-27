@@ -2,12 +2,10 @@
 #define SABER_LIBRARY_HPP
 
 #include <ekizu/util.hpp>
-#include <memory>
-#include <string>
 
 #ifdef _WIN32
 #define _WINSOCKAPI_  // stops windows.h including winsock.h
-#include <windows.h>
+#include <Windows.h>
 using dlopen_handle_t = HMODULE;
 #else
 #include <dlfcn.h>
@@ -31,10 +29,7 @@ struct Library {
 
 	template <typename T>
 	Result<T> get(std::string_view name) const {
-		if (m_handle == nullptr) {
-			return tl::make_unexpected(
-				std::make_error_code(std::errc::bad_address));
-		}
+		if (m_handle == nullptr) { return boost::system::errc::bad_address; }
 
 #ifdef _WIN32
 		auto *ptr = ::GetProcAddress(m_handle, name.data());
@@ -42,10 +37,7 @@ struct Library {
 		auto *ptr = dlsym(m_handle, name.data());
 #endif
 
-		if (ptr == nullptr) {
-			return tl::make_unexpected(
-				std::make_error_code(std::errc::bad_address));
-		}
+		if (ptr == nullptr) { return boost::system::errc::bad_address; }
 
 		return reinterpret_cast<T>(ptr);
 	}
@@ -57,7 +49,7 @@ struct Library {
 	~Library();
 
    private:
-	Library(dlopen_handle_t handle);
+	explicit Library(dlopen_handle_t handle);
 
 	/// Our handle to the shared library.
 	dlopen_handle_t m_handle{};

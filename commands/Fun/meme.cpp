@@ -1,4 +1,5 @@
 #include <ekizu/embed_builder.hpp>
+#include <ekizu/http.hpp>
 #include <nlohmann/json.hpp>
 #include <saber/saber.hpp>
 #include <saber/util.hpp>
@@ -29,20 +30,21 @@ struct Meme : Command {
 				  0,
 			  }) {}
 
-	void setup() override {}
-
-	void execute(
-		const ekizu::Message &message,
-		[[maybe_unused]] const std::vector<std::string> &args) override {
-		fetch_meme(message);
+	void execute(const ekizu::Message &message,
+				 [[maybe_unused]] const std::vector<std::string> &args,
+				 const boost::asio::yield_context &yield) override {
+		fetch_meme(message, yield);
 	}
 
-	void fetch_meme(const ekizu::Message &message) {
-		auto res = net::http::get("https://meme-api.com/gimme");
+	void fetch_meme(const ekizu::Message &message,
+					const boost::asio::yield_context &yield) const {
+		auto res = ekizu::net::HttpConnection::get(
+			"https://meme-api.com/gimme", yield);
 
 		if (!res) { return; }
 
-		const auto json = nlohmann::json::parse(res->body, nullptr, false);
+		const auto json =
+			nlohmann::json::parse(res.value().body(), nullptr, false);
 
 		if (json.is_discarded() || !json.is_object()) { return; }
 
@@ -59,7 +61,7 @@ struct Meme : Command {
 
 		(void)bot->http.create_message(message.channel_id)
 			.embeds({std::move(embed)})
-			.send();
+			.send(yield);
 	}
 };
 

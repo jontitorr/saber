@@ -4,9 +4,10 @@
 #include <ekizu/lru_cache.hpp>
 #include <ekizu/message.hpp>
 #include <ekizu/permissions.hpp>
+// For the DIRNAME macro.
+#include <boost/core/span.hpp>
 #include <filesystem>
 #include <mutex>
-#include <optional>
 #include <saber/library.hpp>
 #include <unordered_map>
 #include <vector>
@@ -23,9 +24,10 @@ struct CommandLoader {
 	CommandLoader &operator=(CommandLoader &&) = delete;
 	~CommandLoader() = default;
 
-	void load(std::string_view path);
-	void load_all();
-	void process_commands(const ekizu::Message &message);
+	void load(std::string_view path, const boost::asio::yield_context &yield);
+	void load_all(const boost::asio::yield_context &yield);
+	void process_commands(const ekizu::Message &message,
+						  const boost::asio::yield_context &yield);
 	void unload(const std::string &name);
 	void get_commands(
 		ekizu::FunctionView<void(const std::unordered_map<
@@ -98,10 +100,15 @@ struct Command {
 	virtual ~Command() = default;
 
 	/// Method reserved for any initial setup for the command.
-	virtual void setup() = 0;
+	virtual ekizu::Result<> setup(
+		[[maybe_unused]] const boost::asio::yield_context &yield) {
+		return ekizu::outcome::success();
+	}
+
 	/// Method reserved for message commands' execution.
 	virtual void execute(const ekizu::Message &message,
-						 const std::vector<std::string> &args) = 0;
+						 const std::vector<std::string> &args,
+						 const boost::asio::yield_context &yield) = 0;
 
 	Saber *bot{};
 	CommandOptions options;

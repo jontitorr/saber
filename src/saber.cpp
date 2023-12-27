@@ -1,3 +1,4 @@
+#include <boost/asio/detached.hpp>
 #include <saber/saber.hpp>
 
 namespace {
@@ -20,12 +21,31 @@ Saber::Saber(std::string_view token)
 	spdlog::set_level(spdlog::level::debug);
 }
 
-void Saber::run() {
-	commands.load_all();
-	(void)shard.run([this](const ekizu::Event &ev) { handle_event(ev); });
+void Saber::run(const boost::asio::yield_context &yield) {
+	commands.load_all(yield);
+
+	while (true) {
+		auto res = shard.next_event(yield);
+
+		if (!res) {
+			if (res.error().failed()) {
+				fmt::println(
+					"Failed to get next event: {}", res.error().message());
+				return;
+			}
+			// Could be handling a non-dispatch event.
+			continue;
+		}
+
+		boost::asio::spawn(
+			yield,
+			[this, e = std::move(res.value())](auto y) { handle_event(e, y); },
+			boost::asio::detached);
+	}
 }
 
-void Saber::handle_event(ekizu::Event ev) {
+void Saber::handle_event(ekizu::Event ev,
+						 const boost::asio::yield_context &yield) {
 	std::visit(
 		overload{[this](const ekizu::Ready &r) {
 					 user = r.user;
@@ -34,10 +54,10 @@ void Saber::handle_event(ekizu::Event ev) {
 					 logger->info("API version: {}", r.v);
 					 logger->info("Guilds: {}", r.guilds.size());
 				 },
-				 [this](const ekizu::MessageCreate &m) {
+				 [this, &yield](const ekizu::MessageCreate &m) {
 					 messages_cache.put(m.message.id, m.message);
 					 users_cache.put(m.message.author.id, m.message.author);
-					 commands.process_commands(m.message);
+					 commands.process_commands(m.message, yield);
 				 },
 				 [this](const ekizu::Log &l) { logger->debug(l.message); },
 				 [this](ekizu::Resumed) { logger->info("Resumed"); },

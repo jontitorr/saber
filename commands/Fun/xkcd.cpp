@@ -27,36 +27,37 @@ struct XKCD : Command {
 				  0,
 			  }) {}
 
-	void setup() override {}
-
 	void execute(const ekizu::Message &message,
-				 const std::vector<std::string> &args) override {
-		fetchXKCD(message, args);
+				 const std::vector<std::string> &args,
+				 const boost::asio::yield_context &yield) override {
+		fetchXKCD(message, args, yield);
 	}
 
    private:
 	std::string api_url{"https://xkcd.com{}info.0.json"};
 
 	void fetchXKCD(const ekizu::Message &message,
-				   [[maybe_unused]] const std::vector<std::string> &args) {
-		const auto res =
-			net::http::get(api_url.replace(api_url.find("{}"), 2, "/"));
+				   [[maybe_unused]] const std::vector<std::string> &args,
+				   const boost::asio::yield_context &yield) {
+		auto res = ekizu::net::HttpConnection::get(
+			api_url.replace(api_url.find("{}"), 2, "/"), yield);
 
-		if (!res || res->status_code != net::HttpStatus::Ok) {
+		if (!res || res.value().result_int() != 200) {
 			bot->logger->error("Error while fetching XKCD data");
 			(void)bot->http.create_message(message.channel_id)
 				.content("There was an error. Please try again.")
-				.send();
+				.send(yield);
 			return;
 		}
 
-		const auto json = nlohmann::json::parse(res->body, nullptr, false);
+		const auto json =
+			nlohmann::json::parse(res.value().body(), nullptr, false);
 
 		if (json.is_discarded() || !json.is_object()) {
 			bot->logger->error("Error parsing XKCD data");
 			(void)bot->http.create_message(message.channel_id)
 				.content("There was an error. Please try again.")
-				.send();
+				.send(yield);
 			return;
 		}
 
@@ -67,7 +68,9 @@ struct XKCD : Command {
 			json["img"].get<std::string>(), json["alt"].get<std::string>(),
 			comic_url);
 
-		(void)bot->http.create_message(message.channel_id).content(msg).send();
+		(void)bot->http.create_message(message.channel_id)
+			.content(msg)
+			.send(yield);
 	}
 };
 

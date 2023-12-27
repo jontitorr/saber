@@ -26,23 +26,26 @@ struct Eightball : Command {
 				  3000,
 			  }) {}
 
-	void setup() override {}
-
 	void execute(const ekizu::Message &message,
-				 const std::vector<std::string> &args) override {
+				 const std::vector<std::string> &args,
+				 const boost::asio::yield_context &yield) override {
 		if (args.empty()) {
 			(void)bot->http.create_message(message.channel_id)
 				.content("You need to ask a question!")
-				.send();
+				.send(yield);
 			return;
 		}
 
 		// Otherwise, pick a random response and send it
 		/// Use random engine.
-		(void)bot->http.create_message(message.channel_id)
-			.content(responses[util::get_random_number<size_t>(
-				0, responses.size() - 1)])
-			.send();
+		if (auto res = bot->http.create_message(message.channel_id)
+						   .content(responses[util::get_random_number<size_t>(
+							   0, responses.size() - 1)])
+						   .send(yield);
+			!res) {
+			bot->logger->error(
+				"Error sending response: {}", res.error().message());
+		}
 	}
 
    private:

@@ -1,6 +1,6 @@
+#include <filesystem>
 #include <saber/saber.hpp>
 #include <saber/util.hpp>
-#include <thread>
 
 namespace {
 #ifdef _WIN32
@@ -15,7 +15,8 @@ constexpr std::string_view LIBRARY_EXTENSION{".dylib"};
 namespace saber {
 CommandLoader::CommandLoader(Saber *parent) : m_parent{parent} {}
 
-void CommandLoader::load(std::string_view path) {
+void CommandLoader::load(std::string_view path,
+						 const boost::asio::yield_context &yield) {
 	auto library = Library::create(path);
 
 	if (!library) {
@@ -24,24 +25,36 @@ void CommandLoader::load(std::string_view path) {
 		return;
 	}
 
-	auto init_command = library->get<Command *(*)(Saber *)>("init_command");
-	auto free_command = library->get<void (*)(Command *)>("free_command");
+	auto init_command =
+		library.value().get<Command *(*)(Saber *)>("init_command");
+	auto free_command =
+		library.value().get<void (*)(Command *)>("free_command");
 
 	if (!init_command || !free_command) { return; }
 
 	std::scoped_lock lk{m_mtx};
 
-	auto *command_ptr = (*init_command)(m_parent);
+	auto *command_ptr = (init_command.value())(m_parent);
 
 	if (command_ptr == nullptr) { return; }
 
-	if (command_ptr->options.init) { command_ptr->setup(); }
+	if (command_ptr->options.init) {
+		auto res = command_ptr->setup(yield);
+
+		if (!res) {
+			m_parent->logger->error(
+				"Failed to setup command {}: {}", command_ptr->options.name,
+				res.error().message());
+			return;
+		}
+	}
 
 	const auto &command_name = command_ptr->options.name;
 	const std::shared_ptr<Command> loader{
-		command_ptr, [dealloc = *free_command](Command *ptr) { dealloc(ptr); }};
+		command_ptr,
+		[dealloc = free_command.value()](Command *ptr) { dealloc(ptr); }};
 
-	commands.insert_or_assign(command_name, std::move(*library));
+	commands.insert_or_assign(command_name, std::move(library.value()));
 	command_map.insert_or_assign(command_name, loader);
 
 	for (const auto &alias : command_ptr->options.aliases) {
@@ -59,7 +72,7 @@ void CommandLoader::load(std::string_view path) {
 	m_parent->logger->info("Loaded command {}", command_name);
 }
 
-void CommandLoader::load_all() {
+void CommandLoader::load_all(const boost::asio::yield_context &yield) {
 	namespace fs = std::filesystem;
 
 	for (const auto &file : fs::directory_iterator(".")) {
@@ -70,14 +83,15 @@ void CommandLoader::load_all() {
 			 filename.compare(
 				 filename.size() - LIBRARY_EXTENSION.size(),
 				 LIBRARY_EXTENSION.size(), LIBRARY_EXTENSION) == 0)) {
-			load(fs::absolute(file.path()).lexically_normal().string());
+			load(fs::absolute(file.path()).lexically_normal().string(), yield);
 		}
 	}
 
 	m_parent->logger->info("Loaded {} commands", commands.size());
 }
 
-void CommandLoader::process_commands(const ekizu::Message &message) {
+void CommandLoader::process_commands(const ekizu::Message &message,
+									 const boost::asio::yield_context &yield) {
 	if (message.author.bot) { return; }
 
 	auto content = message.content.substr(m_parent->prefix.size());
@@ -99,7 +113,7 @@ void CommandLoader::process_commands(const ekizu::Message &message) {
 	// NOTE: I'm seeing a case in which the commands will need the lock so it
 	// should be unlocked here. i.e. an unload command or something.
 	lk.unlock();
-	command_map.at(command_name)->execute(message, args);
+	command_map.at(command_name)->execute(message, args, yield);
 }
 
 void CommandLoader::unload(const std::string &name) {
