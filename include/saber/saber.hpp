@@ -20,7 +20,7 @@ struct Saber {
 	ekizu::HttpClient http;
 	std::shared_ptr<spdlog::logger> logger;
 	ekizu::LruCache<ekizu::Snowflake, ekizu::Message> messages_cache{500};
-	ekizu::Snowflake owner_id{155780111197536256};
+	ekizu::Snowflake owner_id;
 	std::string prefix{">"};
 	ekizu::Shard shard;
 	ekizu::CurrentUser user;

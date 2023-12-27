@@ -16,7 +16,13 @@ Saber::Saber(std::string_view token)
 	: commands{this},
 	  http{token},
 	  shard{ekizu::ShardId::ONE, token, ekizu::Intents::AllIntents} {
-	logger = spdlog::stdout_color_mt("logger");
+	if (const auto *owner_id_e = std::getenv("OWNER_ID");
+		owner_id_e != nullptr) {
+		std::string_view owner_id_str{owner_id_e};
+		owner_id = ekizu::Snowflake{std::stoull(std::string{owner_id_str})};
+	}
+
+	logger = spdlog::stdout_color_mt("saber");
 	spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v");
 
 #ifdef _DEBUG
