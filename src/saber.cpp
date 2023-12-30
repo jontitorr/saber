@@ -1,3 +1,6 @@
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+
 #include <boost/asio/detached.hpp>
 #include <saber/saber.hpp>
 
@@ -13,17 +16,21 @@ overload(Func...) -> overload<Func...>;
 
 namespace saber {
 Saber::Saber(std::string_view token)
-	: commands{this},
-	  http{token},
-	  shard{ekizu::ShardId::ONE, token, ekizu::Intents::AllIntents} {
+	: m_commands{this},
+	  m_http{token},
+	  m_shard{ekizu::ShardId::ONE, token, ekizu::Intents::AllIntents} {
 	if (const auto *owner_id_e = std::getenv("OWNER_ID");
 		owner_id_e != nullptr) {
 		std::string_view owner_id_str{owner_id_e};
-		owner_id = ekizu::Snowflake{std::stoull(std::string{owner_id_str})};
+		m_owner_id = ekizu::Snowflake{std::stoull(std::string{owner_id_str})};
 	}
 
-	logger = spdlog::stdout_color_mt("saber");
-	spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v");
+	auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+	console_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v");
+
+	auto file_sink =
+		std::make_shared<spdlog::sinks::basic_file_sink_mt>("saber.log");
+	file_sink->set_level(spdlog::level::trace);
 
 #ifdef _DEBUG
 	auto level = spdlog::level::debug;
@@ -52,27 +59,30 @@ Saber::Saber(std::string_view token)
 		}
 	}
 
-	spdlog::set_level(level);
+	console_sink->set_level(level);
 
-	shard.attach_logger([this](const ekizu::Log &log) {
+	m_shard.attach_logger([this](const ekizu::Log &log) {
 		switch (log.level) {
-			case ekizu::LogLevel::Info: logger->info(log.message); break;
-			case ekizu::LogLevel::Warn: logger->warn(log.message); break;
-			case ekizu::LogLevel::Error: logger->error(log.message); break;
-			case ekizu::LogLevel::Debug: logger->debug(log.message); break;
-			case ekizu::LogLevel::Trace: logger->trace(log.message); break;
+			case ekizu::LogLevel::Info: m_logger->info(log.message); break;
+			case ekizu::LogLevel::Warn: m_logger->warn(log.message); break;
+			case ekizu::LogLevel::Error: m_logger->error(log.message); break;
+			case ekizu::LogLevel::Debug: m_logger->debug(log.message); break;
+			case ekizu::LogLevel::Trace: m_logger->trace(log.message); break;
 			case ekizu::LogLevel::Critical:
-				logger->critical(log.message);
+				m_logger->critical(log.message);
 				break;
 		}
 	});
+
+	m_logger = spdlog::logger{"saber", {console_sink, file_sink}};
+	m_logger->set_level(level);
 }
 
 void Saber::run(const boost::asio::yield_context &yield) {
-	commands.load_all(yield);
+	m_commands.load_all(yield);
 
 	while (true) {
-		auto res = shard.next_event(yield);
+		auto res = m_shard.next_event(yield);
 
 		if (!res) {
 			if (res.error().failed()) {
@@ -89,27 +99,31 @@ void Saber::run(const boost::asio::yield_context &yield) {
 			[this, e = std::move(res.value())](auto y) { handle_event(e, y); },
 			boost::asio::detached);
 	}
+
+	spdlog::shutdown();
 }
 
 void Saber::handle_event(ekizu::Event ev,
 						 const boost::asio::yield_context &yield) {
 	std::visit(
-		overload{[this](const ekizu::Ready &r) {
-					 user = r.user;
-					 logger->info("Logged in as {}", user.username);
-					 bot_id = user.id;
-					 logger->info("API version: {}", r.v);
-					 logger->info("Guilds: {}", r.guilds.size());
-				 },
-				 [this, &yield](const ekizu::MessageCreate &m) {
-					 messages_cache.put(m.message.id, m.message);
-					 users_cache.put(m.message.author.id, m.message.author);
-					 commands.process_commands(m.message, yield);
-				 },
-				 [this](ekizu::Resumed) { logger->info("Resumed"); },
-				 [this](const auto &e) {
-					 logger->warn("Unhandled event: {}", typeid(e).name());
-				 }},
+		overload{
+			[this](const ekizu::Ready &r) {
+				m_user = r.user;
+				log<ekizu::LogLevel::Info>("Logged in as {}", m_user.username);
+				m_bot_id = m_user.id;
+				log<ekizu::LogLevel::Info>("API version: {}", r.v);
+				log<ekizu::LogLevel::Info>("Guilds: {}", r.guilds.size());
+			},
+			[this, &yield](const ekizu::MessageCreate &m) {
+				m_messages_cache.put(m.message.id, m.message);
+				m_users_cache.put(m.message.author.id, m.message.author);
+				m_commands.process_commands(m.message, yield);
+			},
+			[this](ekizu::Resumed) { log<ekizu::LogLevel::Info>("Resumed"); },
+			[this](const auto &e) {
+				log<ekizu::LogLevel::Warn>(
+					"Unhandled event: {}", typeid(e).name());
+			}},
 		ev);
 }
 }  // namespace saber

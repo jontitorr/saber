@@ -43,8 +43,9 @@ struct XKCD : Command {
 			api_url.replace(api_url.find("{}"), 2, "/"), yield);
 
 		if (!res || res.value().result_int() != 200) {
-			bot->logger->error("Error while fetching XKCD data");
-			(void)bot->http.create_message(message.channel_id)
+			bot->log<ekizu::LogLevel::Error>("Error while fetching XKCD data");
+			(void)bot->http()
+				.create_message(message.channel_id)
 				.content("There was an error. Please try again.")
 				.send(yield);
 			return;
@@ -54,8 +55,9 @@ struct XKCD : Command {
 			nlohmann::json::parse(res.value().body(), nullptr, false);
 
 		if (json.is_discarded() || !json.is_object()) {
-			bot->logger->error("Error parsing XKCD data");
-			(void)bot->http.create_message(message.channel_id)
+			bot->log<ekizu::LogLevel::Error>("Error parsing XKCD data");
+			(void)bot->http()
+				.create_message(message.channel_id)
 				.content("There was an error. Please try again.")
 				.send(yield);
 			return;
@@ -68,7 +70,8 @@ struct XKCD : Command {
 			json["img"].get<std::string>(), json["alt"].get<std::string>(),
 			comic_url);
 
-		(void)bot->http.create_message(message.channel_id)
+		(void)bot->http()
+			.create_message(message.channel_id)
 			.content(msg)
 			.send(yield);
 	}

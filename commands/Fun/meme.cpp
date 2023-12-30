@@ -59,7 +59,8 @@ struct Meme : Command {
 				})
 				.build();
 
-		(void)bot->http.create_message(message.channel_id)
+		(void)bot->http()
+			.create_message(message.channel_id)
 			.embeds({std::move(embed)})
 			.send(yield);
 	}

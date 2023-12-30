@@ -20,7 +20,7 @@ void CommandLoader::load(std::string_view path,
 	auto library = Library::create(path);
 
 	if (!library) {
-		m_parent->logger->error(
+		m_parent->log<ekizu::LogLevel::Error>(
 			"Failed to load command {}: {}", path, library.error().message());
 		return;
 	}
@@ -42,7 +42,7 @@ void CommandLoader::load(std::string_view path,
 		auto res = command_ptr->setup(yield);
 
 		if (!res) {
-			m_parent->logger->error(
+			m_parent->log<ekizu::LogLevel::Error>(
 				"Failed to setup command {}: {}", command_ptr->options.name,
 				res.error().message());
 			return;
@@ -69,7 +69,7 @@ void CommandLoader::load(std::string_view path,
 		user_commands.insert_or_assign(command_name, loader);
 	}
 
-	m_parent->logger->info("Loaded command {}", command_name);
+	m_parent->log<ekizu::LogLevel::Info>("Loaded command {}", command_name);
 }
 
 void CommandLoader::load_all(const boost::asio::yield_context &yield) {
@@ -87,14 +87,14 @@ void CommandLoader::load_all(const boost::asio::yield_context &yield) {
 		}
 	}
 
-	m_parent->logger->info("Loaded {} commands", commands.size());
+	m_parent->log<ekizu::LogLevel::Info>("Loaded {} commands", commands.size());
 }
 
 void CommandLoader::process_commands(const ekizu::Message &message,
 									 const boost::asio::yield_context &yield) {
 	if (message.author.bot) { return; }
 
-	auto content = message.content.substr(m_parent->prefix.size());
+	auto content = message.content.substr(m_parent->prefix().size());
 	auto args = util::split(util::trim(content), " ");
 
 	if (args.empty()) { return; }
@@ -131,7 +131,7 @@ void CommandLoader::unload(const std::string &name) {
 	command_map.erase(name);
 	slash_commands.erase(name);
 	user_commands.erase(name);
-	m_parent->logger->info("Unloaded command {}", name);
+	m_parent->log<ekizu::LogLevel::Info>("Unloaded command {}", name);
 }
 
 void CommandLoader::get_commands(

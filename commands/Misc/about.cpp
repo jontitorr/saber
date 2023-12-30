@@ -28,19 +28,21 @@ struct About : Command {
 			  }) {}
 
 	ekizu::Result<> setup(const boost::asio::yield_context &yield) override {
-		bot->logger->info("Setting up About command");
+		bot->log<ekizu::LogLevel::Info>("Setting up About command");
 
 		BOOST_OUTCOME_TRY(
-			auto owner, bot->http.get_user(bot->owner_id).send(yield));
+			auto owner, bot->http().get_user(bot->owner_id()).send(yield));
 
-		bot->logger->info("Fetched owner: {} from the API", owner.username);
-		bot->users_cache.put(owner.id, owner);
+		bot->log<ekizu::LogLevel::Info>(
+			"Fetched owner: {} from the API", owner.username);
+		bot->users_cache().put(owner.id, owner);
 
-		BOOST_OUTCOME_TRY(auto user, bot->http.get_current_user().send(yield));
+		BOOST_OUTCOME_TRY(
+			auto user, bot->http().get_current_user().send(yield));
 
-		bot->logger->info(
+		bot->log<ekizu::LogLevel::Info>(
 			"Fetched our own user: {} from the API", user.username);
-		bot->users_cache.put(user.id, user);
+		bot->users_cache().put(user.id, user);
 
 		about_embed =
 			ekizu::EmbedBuilder{}
@@ -60,13 +62,13 @@ struct About : Command {
 					"hope you enjoy your stay 💖.")
 				.set_thumbnail({user.display_avatar_url()})
 				.add_fields({
-					{"Info\nOwner", fmt::format("{}", bot->owner_id), true},
+					{"Info\nOwner", fmt::format("{}", bot->owner_id()), true},
 				})
 				.set_footer({fmt::format("Made by {}", owner.username),
 							 owner.display_avatar_url()})
 				.build();
 
-		bot->logger->info("About command setup complete");
+		bot->log<ekizu::LogLevel::Info>("About command setup complete");
 		return ekizu::outcome::success();
 	}
 
@@ -75,7 +77,8 @@ struct About : Command {
 				 const boost::asio::yield_context &yield) override {
 		if (!about_embed) { return; }
 
-		(void)bot->http.create_message(message.channel_id)
+		(void)bot->http()
+			.create_message(message.channel_id)
 			.embeds({*about_embed})
 			.send(yield);
 	}

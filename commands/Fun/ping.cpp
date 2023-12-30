@@ -29,7 +29,8 @@ struct Ping : Command {
 	void execute(const ekizu::Message &message,
 				 [[maybe_unused]] const std::vector<std::string> &args,
 				 const boost::asio::yield_context &yield) override {
-		(void)bot->http.create_message(message.channel_id)
+		(void)bot->http()
+			.create_message(message.channel_id)
 			.content("Pong!")
 			.send(yield);
 	}

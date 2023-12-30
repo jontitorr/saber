@@ -31,7 +31,8 @@ struct CSS : Command {
 				 const boost::asio::yield_context &yield) override {
 		if (!args.empty()) { return; }
 
-		(void)bot->http.create_message(message.channel_id)
+		(void)bot->http()
+			.create_message(message.channel_id)
 			.content(
 				"https://media2.giphy.com/media/yYSSBtDgbbRzq/"
 				"giphy.gif?cid="

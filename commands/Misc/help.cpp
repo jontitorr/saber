@@ -38,12 +38,13 @@ struct Help : Command {
 	void get_command_help(const ekizu::Message &message,
 						  const std::string &command,
 						  const boost::asio::yield_context &yield) {
-		bot->commands.get_commands(
+		bot->commands().get_commands(
 			[&, this](
 				const std::unordered_map<std::string, std::shared_ptr<Command> >
 					&commands) {
 				if (commands.find(command) == commands.end()) {
-					(void)bot->http.create_message(message.channel_id)
+					(void)bot->http()
+						.create_message(message.channel_id)
 						.content("Command not found.")
 						.send(yield);
 					return;
@@ -59,11 +60,11 @@ struct Help : Command {
 
 				if (!cmd->options.examples.empty()) {
 					std::string examples{};
-					examples.reserve((bot->prefix.length() + 3) *
+					examples.reserve((bot->prefix().length() + 3) *
 									 cmd->options.examples.size());
 					for (const auto &example : cmd->options.examples) {
 						examples +=
-							fmt::format("`{}{}`\n", bot->prefix, example);
+							fmt::format("`{}{}`\n", bot->prefix(), example);
 					}
 
 					builder.add_field({"❯ Examples", examples});
@@ -71,7 +72,7 @@ struct Help : Command {
 
 				if (!cmd->options.usage.empty()) {
 					builder.add_field(
-						{"❯ Usage", fmt::format("`{}{}`", bot->prefix,
+						{"❯ Usage", fmt::format("`{}{}`", bot->prefix(),
 												cmd->options.usage)});
 				}
 
@@ -91,9 +92,11 @@ struct Help : Command {
 					{"❯ Cooldown", fmt::format("{}ms", cmd->options.cooldown)});
 				builder.add_field(
 					{"❯ Legend", fmt::format("`<> required, [] optional`")});
-				builder.set_footer({fmt::format("Prefix: `{}`", bot->prefix)});
+				builder.set_footer(
+					{fmt::format("Prefix: `{}`", bot->prefix())});
 
-				(void)bot->http.create_message(message.channel_id)
+				(void)bot->http()
+					.create_message(message.channel_id)
 					.embeds({builder.build()})
 					.send(yield);
 			});

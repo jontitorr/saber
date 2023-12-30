@@ -1,6 +1,8 @@
 #ifndef SABER_LIBRARY_HPP
 #define SABER_LIBRARY_HPP
 
+#include <saber/export.h>
+
 #include <ekizu/util.hpp>
 
 #ifdef _WIN32
@@ -46,7 +48,7 @@ struct Library {
 	Library &operator=(const Library &) = delete;
 	Library(Library &&) noexcept;
 	Library &operator=(Library &&) noexcept;
-	~Library();
+	SABER_EXPORT ~Library();
 
    private:
 	explicit Library(dlopen_handle_t handle);

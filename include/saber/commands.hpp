@@ -24,12 +24,13 @@ struct CommandLoader {
 	CommandLoader &operator=(CommandLoader &&) = delete;
 	~CommandLoader() = default;
 
-	void load(std::string_view path, const boost::asio::yield_context &yield);
-	void load_all(const boost::asio::yield_context &yield);
-	void process_commands(const ekizu::Message &message,
-						  const boost::asio::yield_context &yield);
-	void unload(const std::string &name);
-	void get_commands(
+	SABER_EXPORT void load(std::string_view path,
+						   const boost::asio::yield_context &yield);
+	SABER_EXPORT void load_all(const boost::asio::yield_context &yield);
+	SABER_EXPORT void process_commands(const ekizu::Message &message,
+									   const boost::asio::yield_context &yield);
+	SABER_EXPORT void unload(const std::string &name);
+	SABER_EXPORT void get_commands(
 		ekizu::FunctionView<void(const std::unordered_map<
 								 std::string, std::shared_ptr<Command> > &)>)
 		const;

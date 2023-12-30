@@ -35,7 +35,8 @@ struct Hype : Command {
 			hypu[util::get_random_number<size_t>(0, hypu.size() - 1)];
 		std::string msg = ":train2: CHOO CHOO " + selectedHype;
 
-		(void)bot->http.create_message(message.channel_id)
+		(void)bot->http()
+			.create_message(message.channel_id)
 			.content(msg)
 			.send(yield);
 	}

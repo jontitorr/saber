@@ -31,7 +31,8 @@ struct Praise : Command {
 				 const boost::asio::yield_context &yield) override {
 		if (!args.empty()) { return; }
 
-		(void)bot->http.create_message(message.channel_id)
+		(void)bot->http()
+			.create_message(message.channel_id)
 			.content("https://i.imgur.com/K8ySn3e.gif")
 			.send(yield);
 	}

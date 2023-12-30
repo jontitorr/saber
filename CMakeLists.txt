@@ -17,22 +17,23 @@ if(UNIX)
     add_compile_options("$<$<CONFIG:DEBUG>:-D_DEBUG>")
 endif()
 
-option(${PROJECT_NAME}_INSTALL "Generate the install target" ON)
+option(saber_INSTALL "Generate the install target" ON)
 
 include(cmake/CPM.cmake)
 
+set(BUILD_SHARED_LIBS ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS OFF)
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 
-cpmfindpackage(
-    NAME
-    "ekizu"
-    GITHUB_REPOSITORY
-    "Xminent/ekizu"
-    GIT_TAG
-    "dev"
-    OPTIONS
-    "BUILD_SHARED_LIBS OFF"
-)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "$<0:>${CMAKE_BINARY_DIR}/bin") # .exe and
+                                                                   # .dll
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "$<0:>${CMAKE_BINARY_DIR}/lib") # .so and
+                                                                   # .dylib
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "$<0:>${CMAKE_BINARY_DIR}/lib") # .lib and .a
+
+cpmaddpackage(NAME "ekizu" GITHUB_REPOSITORY "Xminent/ekizu" GIT_TAG "dev")
 
 cpmfindpackage(
     NAME
@@ -48,22 +49,41 @@ cpmfindpackage(
 file(GLOB_RECURSE sources CONFIGURE_DEPENDS "include/*.hpp" "src/*.cpp")
 list(FILTER sources EXCLUDE REGEX ".*main\\.cpp$")
 
-add_library(${PROJECT_NAME}_lib ${sources})
-add_executable(${PROJECT_NAME} src/main.cpp)
+# Actual Logic
 
-target_compile_features(${PROJECT_NAME}_lib PUBLIC cxx_std_17)
+add_library(saber_lib ${sources})
 
-if(WIN32)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
-endif()
+include(GenerateExportHeader)
 
-target_include_directories(
-    ${PROJECT_NAME}_lib PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-                               $<INSTALL_INTERFACE:include>
+generate_export_header(
+    saber_lib EXPORT_FILE_NAME export/saber/export.h EXPORT_MACRO_NAME
+    SABER_EXPORT
 )
 
-target_link_libraries(${PROJECT_NAME}_lib PUBLIC ekizu spdlog::spdlog)
-target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_lib)
+target_compile_definitions(
+    saber_lib PUBLIC $<$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>:SABER_STATIC_DEFINE>
+)
+
+target_include_directories(
+    saber_lib
+    PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+           $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/export>
+           $<INSTALL_INTERFACE:include>
+)
+
+target_link_libraries(saber_lib PUBLIC ekizu spdlog::spdlog)
+
+# EXE
+
+add_executable(saber src/main.cpp)
+
+if(WIN32)
+    target_compile_definitions(saber PRIVATE _CRT_SECURE_NO_WARNINGS)
+endif()
+
+target_link_libraries(saber PRIVATE saber_lib)
+
+# Command Setup
 
 file(GLOB_RECURSE commands CONFIGURE_DEPENDS commands/*.cpp)
 
@@ -71,9 +91,9 @@ foreach(fullcmdname ${commands})
     get_filename_component(cmdname ${fullcmdname} NAME_WE)
     message(STATUS "Found command:'cmd_${cmdname}'")
     add_library(cmd_${cmdname} SHARED ${fullcmdname})
-    target_link_libraries(cmd_${cmdname} PRIVATE ${PROJECT_NAME}_lib)
+    target_link_libraries(cmd_${cmdname} PRIVATE saber_lib)
 endforeach(fullcmdname)
 
-if(${PROJECT_NAME}_INSTALL)
-    install(TARGETS ${PROJECT_NAME} DESTINATION bin)
+if(saber_INSTALL)
+    install(TARGETS saber DESTINATION bin)
 endif()
