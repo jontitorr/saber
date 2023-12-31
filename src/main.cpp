@@ -2,14 +2,14 @@
 #include <saber/saber.hpp>
 
 async_main(const boost::asio::yield_context& yield) {
-	const auto* token = std::getenv("DISCORD_TOKEN");
+	BOOST_OUTCOME_TRY(auto config, saber::Config::from_file("config.json"));
 
-	if (token == nullptr) {
+	if (config.token.empty()) {
 		fmt::println("Missing DISCORD_TOKEN environment variable");
 		return boost::system::errc::invalid_argument;
 	}
 
-	auto saber = saber::Saber{token};
+	auto saber = saber::Saber{config};
 	saber.run(yield);
 
 	return ekizu::outcome::success();

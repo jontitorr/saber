@@ -8,10 +8,11 @@
 #include <ekizu/http_client.hpp>
 #include <ekizu/shard.hpp>
 #include <saber/commands.hpp>
+#include <saber/config.hpp>
 
 namespace saber {
 struct Saber {
-	SABER_EXPORT explicit Saber(std::string_view token);
+	SABER_EXPORT explicit Saber(Config config);
 
 	[[nodiscard]] ekizu::Snowflake bot_id() const { return m_bot_id; }
 	[[nodiscard]] CommandLoader &commands() { return m_commands; }
@@ -24,8 +25,11 @@ struct Saber {
 	users_cache() {
 		return m_users_cache;
 	}
-	[[nodiscard]] ekizu::Snowflake owner_id() const { return m_owner_id; }
-	[[nodiscard]] std::string_view prefix() const { return m_prefix; }
+	[[nodiscard]] const Config &config() const { return m_config; }
+	[[nodiscard]] ekizu::Snowflake owner_id() const {
+		return config().owner_id;
+	}
+	[[nodiscard]] std::string_view prefix() const { return config().prefix; }
 
 	SABER_EXPORT void run(const boost::asio::yield_context &yield);
 
@@ -55,11 +59,10 @@ struct Saber {
 	ekizu::HttpClient m_http;
 	std::optional<spdlog::logger> m_logger;
 	ekizu::LruCache<ekizu::Snowflake, ekizu::Message> m_messages_cache{500};
-	ekizu::Snowflake m_owner_id;
-	std::string m_prefix{">"};
 	ekizu::Shard m_shard;
 	ekizu::CurrentUser m_user;
 	ekizu::LruCache<ekizu::Snowflake, ekizu::User> m_users_cache{500};
+	Config m_config;
 };
 }  // namespace saber
 

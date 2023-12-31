@@ -15,16 +15,11 @@ overload(Func...) -> overload<Func...>;
 }  // namespace
 
 namespace saber {
-Saber::Saber(std::string_view token)
+Saber::Saber(Config config)
 	: m_commands{this},
-	  m_http{token},
-	  m_shard{ekizu::ShardId::ONE, token, ekizu::Intents::AllIntents} {
-	if (const auto *owner_id_e = std::getenv("OWNER_ID");
-		owner_id_e != nullptr) {
-		std::string_view owner_id_str{owner_id_e};
-		m_owner_id = ekizu::Snowflake{std::stoull(std::string{owner_id_str})};
-	}
-
+	  m_http{config.token},
+	  m_shard{ekizu::ShardId::ONE, config.token, ekizu::Intents::AllIntents},
+	  m_config{std::move(config)} {
 	auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
 	console_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v");
 
