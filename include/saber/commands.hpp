@@ -101,15 +101,15 @@ struct Command {
 	virtual ~Command() = default;
 
 	/// Method reserved for any initial setup for the command.
-	virtual ekizu::Result<> setup(
+	virtual Result<> setup(
 		[[maybe_unused]] const boost::asio::yield_context &yield) {
 		return ekizu::outcome::success();
 	}
 
 	/// Method reserved for message commands' execution.
-	virtual void execute(const ekizu::Message &message,
-						 const std::vector<std::string> &args,
-						 const boost::asio::yield_context &yield) = 0;
+	virtual Result<> execute(const ekizu::Message &message,
+							 const std::vector<std::string> &args,
+							 const boost::asio::yield_context &yield) = 0;
 
 	Saber *bot{};
 	CommandOptions options;

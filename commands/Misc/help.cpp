@@ -27,27 +27,26 @@ struct Help : Command {
 				  {},
 				  3000}) {}
 
-	void execute(const ekizu::Message &message,
-				 const std::vector<std::string> &args,
-				 const boost::asio::yield_context &yield) override {
+	Result<> execute(const ekizu::Message &message,
+					 const std::vector<std::string> &args,
+					 const boost::asio::yield_context &yield) override {
 		// TODO: Implement help menu when no args are given.
 
 		return get_command_help(message, args[0], yield);
 	}
 
-	void get_command_help(const ekizu::Message &message,
-						  const std::string &command,
-						  const boost::asio::yield_context &yield) {
+	Result<> get_command_help(const ekizu::Message &message,
+							  const std::string &command,
+							  const boost::asio::yield_context &yield) {
 		bot->commands().get_commands(
 			[&, this](
 				const std::unordered_map<std::string, std::shared_ptr<Command> >
 					&commands) {
 				if (commands.find(command) == commands.end()) {
-					(void)bot->http()
+					return (void)bot->http()
 						.create_message(message.channel_id)
 						.content("Command not found.")
 						.send(yield);
-					return;
 				}
 
 				const auto &cmd = commands.at(command);
@@ -100,6 +99,8 @@ struct Help : Command {
 					.embeds({builder.build()})
 					.send(yield);
 			});
+
+		return outcome::success();
 	}
 };
 

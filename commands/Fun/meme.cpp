@@ -30,23 +30,25 @@ struct Meme : Command {
 				  0,
 			  }) {}
 
-	void execute(const ekizu::Message &message,
-				 [[maybe_unused]] const std::vector<std::string> &args,
-				 const boost::asio::yield_context &yield) override {
-		fetch_meme(message, yield);
+	Result<> execute(const ekizu::Message &message,
+					 [[maybe_unused]] const std::vector<std::string> &args,
+					 const boost::asio::yield_context &yield) override {
+		return fetch_meme(message, yield);
 	}
 
-	void fetch_meme(const ekizu::Message &message,
-					const boost::asio::yield_context &yield) const {
+	Result<> fetch_meme(const ekizu::Message &message,
+						const boost::asio::yield_context &yield) const {
 		auto res = ekizu::net::HttpConnection::get(
 			"https://meme-api.com/gimme", yield);
 
-		if (!res) { return; }
+		if (!res) { return boost::system::errc::operation_not_permitted; }
 
 		const auto json =
 			nlohmann::json::parse(res.value().body(), nullptr, false);
 
-		if (json.is_discarded() || !json.is_object()) { return; }
+		if (json.is_discarded() || !json.is_object()) {
+			return boost::system::errc::invalid_argument;
+		}
 
 		auto embed =
 			ekizu::EmbedBuilder{}
@@ -59,10 +61,12 @@ struct Meme : Command {
 				})
 				.build();
 
-		(void)bot->http()
-			.create_message(message.channel_id)
-			.embeds({std::move(embed)})
-			.send(yield);
+		BOOST_OUTCOME_TRY(bot->http()
+							  .create_message(message.channel_id)
+							  .embeds({std::move(embed)})
+							  .send(yield));
+
+		return outcome::success();
 	}
 };
 

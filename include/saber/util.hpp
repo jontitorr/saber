@@ -12,8 +12,14 @@ T get_random_number(T begin = (std::numeric_limits<T>::min)(),
 					T end = (std::numeric_limits<T>::max)()) {
 	std::random_device rd;
 	std::mt19937 gen(rd());
-	std::uniform_int_distribution<T> dis(begin, end);
-	return dis(gen);
+
+	if constexpr (std::is_floating_point_v<T>) {
+		std::uniform_real_distribution<T> dis(begin, end);
+		return dis(gen);
+	} else {
+		std::uniform_int_distribution<T> dis(begin, end);
+		return dis(gen);
+	}
 }
 
 std::vector<std::string> split(std::string_view s, std::string_view delimiter);

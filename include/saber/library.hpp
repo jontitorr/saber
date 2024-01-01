@@ -3,7 +3,8 @@
 
 #include <saber/export.h>
 
-#include <ekizu/util.hpp>
+#include <saber/result.hpp>
+
 
 #ifdef _WIN32
 #define _WINSOCKAPI_  // stops windows.h including winsock.h
@@ -15,9 +16,6 @@ using dlopen_handle_t = void *;
 #endif
 
 namespace saber {
-template <typename T>
-using Result = ekizu::Result<T>;
-
 /**
  * @brief Simple cross-platform wrapper for platform-specific dlopen()-like
  * functions. Supports loading instances of objects with supporting allocater

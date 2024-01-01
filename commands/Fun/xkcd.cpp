@@ -27,18 +27,18 @@ struct XKCD : Command {
 				  0,
 			  }) {}
 
-	void execute(const ekizu::Message &message,
-				 const std::vector<std::string> &args,
-				 const boost::asio::yield_context &yield) override {
-		fetchXKCD(message, args, yield);
+	Result<> execute(const ekizu::Message &message,
+					 const std::vector<std::string> &args,
+					 const boost::asio::yield_context &yield) override {
+		return fetchXKCD(message, args, yield);
 	}
 
    private:
 	std::string api_url{"https://xkcd.com{}info.0.json"};
 
-	void fetchXKCD(const ekizu::Message &message,
-				   [[maybe_unused]] const std::vector<std::string> &args,
-				   const boost::asio::yield_context &yield) {
+	Result<> fetchXKCD(const ekizu::Message &message,
+					   [[maybe_unused]] const std::vector<std::string> &args,
+					   const boost::asio::yield_context &yield) {
 		auto res = ekizu::net::HttpConnection::get(
 			api_url.replace(api_url.find("{}"), 2, "/"), yield);
 
@@ -48,7 +48,7 @@ struct XKCD : Command {
 				.create_message(message.channel_id)
 				.content("There was an error. Please try again.")
 				.send(yield);
-			return;
+			return boost::system::errc::operation_not_permitted;
 		}
 
 		const auto json =
@@ -56,11 +56,12 @@ struct XKCD : Command {
 
 		if (json.is_discarded() || !json.is_object()) {
 			bot->log<ekizu::LogLevel::Error>("Error parsing XKCD data");
-			(void)bot->http()
-				.create_message(message.channel_id)
-				.content("There was an error. Please try again.")
-				.send(yield);
-			return;
+			BOOST_OUTCOME_TRY(
+				bot->http()
+					.create_message(message.channel_id)
+					.content("There was an error. Please try again.")
+					.send(yield));
+			return boost::system::errc::invalid_argument;
 		}
 
 		const auto comic_url = fmt::format("https://xkcd.com/{}", json["num"]);
@@ -70,10 +71,12 @@ struct XKCD : Command {
 			json["img"].get<std::string>(), json["alt"].get<std::string>(),
 			comic_url);
 
-		(void)bot->http()
-			.create_message(message.channel_id)
-			.content(msg)
-			.send(yield);
+		BOOST_OUTCOME_TRY(bot->http()
+							  .create_message(message.channel_id)
+							  .content(msg)
+							  .send(yield));
+
+		return outcome::success();
 	}
 };
 

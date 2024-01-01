@@ -26,15 +26,17 @@ struct Praise : Command {
 				  0,
 			  }) {}
 
-	void execute(const ekizu::Message &message,
-				 const std::vector<std::string> &args,
-				 const boost::asio::yield_context &yield) override {
-		if (!args.empty()) { return; }
+	Result<> execute(const ekizu::Message &message,
+					 const std::vector<std::string> &args,
+					 const boost::asio::yield_context &yield) override {
+		if (!args.empty()) { return outcome::success(); }
 
-		(void)bot->http()
-			.create_message(message.channel_id)
-			.content("https://i.imgur.com/K8ySn3e.gif")
-			.send(yield);
+		BOOST_OUTCOME_TRY(bot->http()
+							  .create_message(message.channel_id)
+							  .content("https://i.imgur.com/K8ySn3e.gif")
+							  .send(yield));
+
+		return outcome::success();
 	}
 };
 

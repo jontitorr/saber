@@ -27,7 +27,7 @@ struct About : Command {
 				  2000,
 			  }) {}
 
-	ekizu::Result<> setup(const boost::asio::yield_context &yield) override {
+	Result<> setup(const boost::asio::yield_context &yield) override {
 		bot->log<ekizu::LogLevel::Info>("Setting up About command");
 
 		BOOST_OUTCOME_TRY(
@@ -69,18 +69,22 @@ struct About : Command {
 				.build();
 
 		bot->log<ekizu::LogLevel::Info>("About command setup complete");
-		return ekizu::outcome::success();
+		return outcome::success();
 	}
 
-	void execute(const ekizu::Message &message,
-				 [[maybe_unused]] const std::vector<std::string> &args,
-				 const boost::asio::yield_context &yield) override {
-		if (!about_embed) { return; }
+	Result<> execute(const ekizu::Message &message,
+					 [[maybe_unused]] const std::vector<std::string> &args,
+					 const boost::asio::yield_context &yield) override {
+		if (!about_embed) {
+			return boost::system::errc::operation_not_permitted;
+		}
 
-		(void)bot->http()
-			.create_message(message.channel_id)
-			.embeds({*about_embed})
-			.send(yield);
+		BOOST_OUTCOME_TRY(bot->http()
+							  .create_message(message.channel_id)
+							  .embeds({*about_embed})
+							  .send(yield));
+
+		return outcome::success();
 	}
 
    private:

@@ -71,7 +71,7 @@ target_include_directories(
            $<INSTALL_INTERFACE:include>
 )
 
-target_link_libraries(saber_lib PUBLIC ekizu spdlog::spdlog)
+target_link_libraries(saber_lib PUBLIC ekizu spdlog::spdlog Boost::url)
 
 # EXE
 

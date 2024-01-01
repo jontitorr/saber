@@ -26,41 +26,32 @@ struct Countdown : Command {
 				  0,
 			  }) {}
 
-	void execute(const ekizu::Message &message,
-				 const std::vector<std::string> &args,
-				 const boost::asio::yield_context &yield) override {
-		if (!args.empty()) { return; }
+	Result<> execute(const ekizu::Message &message,
+					 const std::vector<std::string> &args,
+					 const boost::asio::yield_context &yield) override {
+		if (!args.empty()) { return outcome::success(); }
+
 		const std::vector<std::string> countdown{
 			"five", "four", "three", "two", "one"};
 
 		boost::asio::deadline_timer timer{yield.get_executor()};
 
 		for (const auto &num : countdown) {
-			auto res = bot->http()
-						   .create_message(message.channel_id)
-						   .content(fmt::format("**:{}:**", num))
-						   .send(yield);
-
-			if (!res) {
-				bot->log<ekizu::LogLevel::Error>(
-					"Error sending countdown: {}", res.error().message());
-				return;
-			}
+			BOOST_OUTCOME_TRY(bot->http()
+								  .create_message(message.channel_id)
+								  .content(fmt::format("**:{}:**", num))
+								  .send(yield));
 
 			timer.expires_from_now(boost::posix_time::seconds(1));
 			timer.async_wait(yield);
 		}
 
-		auto res = bot->http()
-					   .create_message(message.channel_id)
-					   .content("**:ok:** DING DING DING")
-					   .send(yield);
+		BOOST_OUTCOME_TRY(bot->http()
+							  .create_message(message.channel_id)
+							  .content("**:ok:** DING DING DING")
+							  .send(yield));
 
-		if (!res) {
-			bot->log<ekizu::LogLevel::Error>(
-				"Error sending last countdown: {}", res.error().message());
-			return;
-		}
+		return outcome::success();
 	}
 };
 

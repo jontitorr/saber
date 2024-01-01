@@ -9,6 +9,7 @@
 #include <ekizu/shard.hpp>
 #include <saber/commands.hpp>
 #include <saber/config.hpp>
+#include <saber/reddit.hpp>
 
 namespace saber {
 struct Saber {

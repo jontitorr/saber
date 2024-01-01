@@ -113,7 +113,13 @@ void CommandLoader::process_commands(const ekizu::Message &message,
 	// NOTE: I'm seeing a case in which the commands will need the lock so it
 	// should be unlocked here. i.e. an unload command or something.
 	lk.unlock();
-	command_map.at(command_name)->execute(message, args, yield);
+
+	if (auto res = command_map.at(command_name)->execute(message, args, yield);
+		!res) {
+		m_parent->log<ekizu::LogLevel::Error>(
+			"Failed to execute command {}: {}", command_name,
+			res.error().message());
+	}
 }
 
 void CommandLoader::unload(const std::string &name) {
