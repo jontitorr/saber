@@ -1,7 +1,6 @@
 #ifndef SABER_COMMANDS_HPP
 #define SABER_COMMANDS_HPP
 
-#include <ekizu/lru_cache.hpp>
 #include <ekizu/message.hpp>
 #include <ekizu/permissions.hpp>
 // For the DIRNAME macro.

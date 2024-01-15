@@ -6,7 +6,10 @@
 #include <spdlog/spdlog.h>
 
 #include <ekizu/http_client.hpp>
+#include <ekizu/lru_cache.hpp>
 #include <ekizu/shard.hpp>
+#include <ekizu/voice_connection.hpp>
+#include <ekizu/voice_state.hpp>
 #include <saber/commands.hpp>
 #include <saber/config.hpp>
 #include <saber/reddit.hpp>
@@ -26,12 +29,21 @@ struct Saber {
 	users_cache() {
 		return m_users_cache;
 	}
+	[[nodiscard]] ekizu::LruCache<
+		ekizu::Snowflake,
+		ekizu::LruCache<ekizu::Snowflake, ekizu::VoiceState>> &
+	voice_state_cache() {
+		return m_voice_states_cache;
+	}
 	[[nodiscard]] const Config &config() const { return m_config; }
 	[[nodiscard]] ekizu::Snowflake owner_id() const {
 		return config().owner_id;
 	}
 	[[nodiscard]] std::string_view prefix() const { return config().prefix; }
 
+	SABER_EXPORT Result<ekizu::VoiceConnectionConfig *> join_voice_channel(
+		ekizu::Snowflake guild_id, ekizu::Snowflake channel_id,
+		const boost::asio::yield_context &yield);
 	SABER_EXPORT void run(const boost::asio::yield_context &yield);
 
 	template <ekizu::LogLevel level = ekizu::LogLevel::Debug, typename... Args>
@@ -63,6 +75,14 @@ struct Saber {
 	ekizu::Shard m_shard;
 	ekizu::CurrentUser m_user;
 	ekizu::LruCache<ekizu::Snowflake, ekizu::User> m_users_cache{500};
+	std::unordered_map<ekizu::Snowflake, ekizu::VoiceConnectionConfig>
+		m_voice_configs{500};
+	ekizu::SnowflakeLruCache<boost::asio::experimental::channel<void(
+		boost::system::error_code, const ekizu::VoiceConnectionConfig *)>>
+		m_voice_ready_channels{500};
+	ekizu::LruCache<ekizu::Snowflake,
+					ekizu::LruCache<ekizu::Snowflake, ekizu::VoiceState>>
+		m_voice_states_cache{500};
 	Config m_config;
 };
 }  // namespace saber

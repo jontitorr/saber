@@ -21,7 +21,7 @@ Saber::Saber(Config config)
 	  m_shard{ekizu::ShardId::ONE, config.token, ekizu::Intents::AllIntents},
 	  m_config{std::move(config)} {
 	auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-	console_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v");
+	console_sink->set_pattern("%^%Y-%m-%d %H:%M:%S.%e [%L] [th#%t]%$ : %v");
 
 	auto file_sink =
 		std::make_shared<spdlog::sinks::basic_file_sink_mt>("saber.log");
@@ -73,6 +73,18 @@ Saber::Saber(Config config)
 	m_logger->set_level(level);
 }
 
+SABER_EXPORT Result<ekizu::VoiceConnectionConfig *> Saber::join_voice_channel(
+	ekizu::Snowflake guild_id, ekizu::Snowflake channel_id,
+	const boost::asio::yield_context &yield) {
+	m_voice_ready_channels.emplace(guild_id, yield.get_executor());
+
+	auto channel = m_voice_ready_channels[guild_id];
+	EKIZU_TRY(m_shard.join_voice_channel(guild_id, channel_id, yield));
+	channel->async_receive(yield);
+	m_voice_ready_channels.remove(guild_id);
+	return &m_voice_configs[guild_id];
+}
+
 void Saber::run(const boost::asio::yield_context &yield) {
 	m_commands.load_all(yield);
 
@@ -102,6 +114,36 @@ void Saber::handle_event(ekizu::Event ev,
 						 const boost::asio::yield_context &yield) {
 	std::visit(
 		overload{
+			[this](const ekizu::GuildCreate &g) {
+				ekizu::SnowflakeLruCache<ekizu::VoiceState> lru{500};
+
+				for (const auto &voice_state : g.guild.voice_states) {
+					lru.put(voice_state.user_id, voice_state);
+				}
+
+				if (!m_voice_states_cache.has(g.guild.id)) {
+					m_voice_states_cache.put(g.guild.id, std::move(lru));
+				}
+			},
+			[this](const ekizu::VoiceStateUpdate &v) {
+				if (v.voice_state.guild_id) {
+					m_voice_states_cache[*v.voice_state.guild_id]->put(
+						v.voice_state.user_id, v.voice_state);
+					m_voice_configs[*v.voice_state.guild_id].state =
+						v.voice_state;
+				}
+			},
+			[this](const ekizu::VoiceServerUpdate &v) {
+				m_voice_configs[v.guild_id].endpoint = v.endpoint;
+				m_voice_configs[v.guild_id].token = v.token;
+
+				if (m_voice_ready_channels.has(v.guild_id)) {
+					m_voice_ready_channels[v.guild_id]->async_send(
+						boost::system::error_code{},
+						&m_voice_configs[v.guild_id],
+						[](const boost::system::error_code &) {});
+				}
+			},
 			[this](const ekizu::Ready &r) {
 				m_user = r.user;
 				log<ekizu::LogLevel::Info>("Logged in as {}", m_user.username);
