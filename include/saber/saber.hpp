@@ -44,6 +44,9 @@ struct Saber {
 	SABER_EXPORT Result<ekizu::VoiceConnectionConfig *> join_voice_channel(
 		ekizu::Snowflake guild_id, ekizu::Snowflake channel_id,
 		const boost::asio::yield_context &yield);
+	SABER_EXPORT Result<> leave_voice_channel(
+		ekizu::Snowflake guild_id, const boost::asio::yield_context &yield);
+
 	SABER_EXPORT void run(const boost::asio::yield_context &yield);
 
 	template <ekizu::LogLevel level = ekizu::LogLevel::Debug, typename... Args>

@@ -85,6 +85,11 @@ SABER_EXPORT Result<ekizu::VoiceConnectionConfig *> Saber::join_voice_channel(
 	return &m_voice_configs[guild_id];
 }
 
+SABER_EXPORT Result<> Saber::leave_voice_channel(
+	ekizu::Snowflake guild_id, const boost::asio::yield_context &yield) {
+	return m_shard.leave_voice_channel(guild_id, yield);
+}
+
 void Saber::run(const boost::asio::yield_context &yield) {
 	m_commands.load_all(yield);
 

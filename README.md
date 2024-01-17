@@ -19,7 +19,7 @@ A WIP Discord bot written in C++
 This application uses [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake) to manage dependencies. It is an amazing package manager for CMake projects and allows us to install the entire library using the following commands:
 
 ```bash
-  git clone https://www.github.com/xminent/saber
+  git clone https://www.github.com/jontitorr/saber
   cd saber
   cmake -S . -B build
   cmake --build build --target install
@@ -36,7 +36,7 @@ Take full advantage of the [.clang-format](.clang-format) file located in the ro
 
 ### Third party Dependencies
 
-- [ekizu](https://github.com/xminent/ekizu) - C++ library for Discord API
+- [ekizu](https://github.com/jontitorr/ekizu) - C++ library for Discord API
 - [spdlog](https://github.com/gabime/spdlog) - C++ logging library
 
 ## License

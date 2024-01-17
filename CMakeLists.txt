@@ -33,7 +33,75 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "$<0:>${CMAKE_BINARY_DIR}/lib") # .so and
                                                                    # .dylib
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "$<0:>${CMAKE_BINARY_DIR}/lib") # .lib and .a
 
-cpmaddpackage(NAME "ekizu" GITHUB_REPOSITORY "Xminent/ekizu" GIT_TAG "dev")
+set(TRY_BOOST_VERSION "1.81.0")
+set(BOOST_NOT_HEADER_ONLY_COMPONENTS_THAT_YOU_NEED
+    "coroutine;filesystem;thread;url"
+)
+set(BOOST_HEADER_ONLY_COMPONENTS_THAT_YOU_NEED "asio;beast;process;outcome")
+
+set(IS_BOOST_LOCAL OFF)
+if(${CPM_LOCAL_PACKAGES_ONLY})
+    message(STATUS "Trying to find Boost...")
+    find_package(
+        Boost ${TRY_BOOST_VERSION} REQUIRED
+        COMPONENTS ${BOOST_NOT_HEADER_ONLY_COMPONENTS_THAT_YOU_NEED}
+    )
+    set(IS_BOOST_LOCAL ON)
+elseif(${CPM_USE_LOCAL_PACKAGES} OR NOT ${CPM_DOWNLOAD_ALL})
+    message(STATUS "Trying to use local Boost...")
+    find_package(
+        Boost ${TRY_BOOST_VERSION}
+        COMPONENTS ${BOOST_NOT_HEADER_ONLY_COMPONENTS_THAT_YOU_NEED}
+    )
+    if(${BOOST_FOUND})
+        set(IS_BOOST_LOCAL ON)
+        message(DEBUG "boost include dir: ${Boost_INCLUDE_DIRS}")
+    endif()
+endif()
+
+if(NOT (${BOOST_FOUND}) OR (NOT DEFINED BOOST_FOUND))
+    message(STATUS "Trying to download Boost...")
+    set(BOOST_INCLUDE_LIBRARIES
+        "${BOOST_NOT_HEADER_ONLY_COMPONENTS_THAT_YOU_NEED};${BOOST_HEADER_ONLY_COMPONENTS_THAT_YOU_NEED}"
+    )
+    set(BOOST_SKIP_INSTALL_RULES OFF)
+    cpmaddpackage(
+        NAME
+        Boost
+        URL
+        "https://github.com/jontitorr/boost-cmake/releases/download/1.84.0-release/boost-1.84.0.tar.xz"
+    )
+    set(IS_BOOST_LOCAL OFF)
+endif()
+
+cpmaddpackage(NAME "ekizu" GITHUB_REPOSITORY "jontitorr/ekizu" GIT_TAG "dev")
+
+cpmfindpackage(
+    NAME
+    "Ogg"
+    GITHUB_REPOSITORY
+    "xiph/ogg"
+    GIT_TAG
+    "v1.3.5"
+    OPTIONS
+    "BUILD_TESTING OFF"
+)
+
+cpmfindpackage(
+    NAME
+    "opusfile"
+    GITHUB_REPOSITORY
+    "xiph/opusfile"
+    GIT_TAG
+    "master"
+    OPTIONS
+    "BUILD_SHARED_LIBS OFF"
+    "OP_DISABLE_HTTP ON"
+    "OP_DISABLE_EXAMPLES ON"
+    "OP_DISABLE_DOCS ON"
+)
+
+set_property(TARGET opusfile PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 cpmfindpackage(
     NAME
@@ -71,7 +139,13 @@ target_include_directories(
            $<INSTALL_INTERFACE:include>
 )
 
-target_link_libraries(saber_lib PUBLIC ekizu spdlog::spdlog Boost::url)
+target_link_libraries(
+    saber_lib PUBLIC ekizu OpusFile::opusfile spdlog::spdlog Boost::url
+)
+
+if(NOT ${IS_BOOST_LOCAL})
+    target_link_libraries(saber_lib PUBLIC Boost::process)
+endif()
 
 # EXE
 

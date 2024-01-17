@@ -30,9 +30,30 @@ struct Help : Command {
 	Result<> execute(const ekizu::Message &message,
 					 const std::vector<std::string> &args,
 					 const boost::asio::yield_context &yield) override {
-		// TODO: Implement help menu when no args are given.
+		if (args.empty()) { return get_help(message, yield); }
 
 		return get_command_help(message, args[0], yield);
+	}
+
+	Result<> get_help(const ekizu::Message &message,
+					  const boost::asio::yield_context &yield) {
+		// print all command names.
+		std::string names;
+
+		bot->commands().get_commands(
+			[&](const std::unordered_map<std::string, std::shared_ptr<Command>>
+					&commands) {
+				for (const auto &command : commands) {
+					names += command.first + "\n";
+				}
+			});
+
+		(void)bot->http()
+			.create_message(message.channel_id)
+			.content("Available commands:\n" + names)
+			.send(yield);
+
+		return ekizu::outcome::success();
 	}
 
 	Result<> get_command_help(const ekizu::Message &message,
@@ -40,7 +61,7 @@ struct Help : Command {
 							  const boost::asio::yield_context &yield) {
 		bot->commands().get_commands(
 			[&, this](
-				const std::unordered_map<std::string, std::shared_ptr<Command> >
+				const std::unordered_map<std::string, std::shared_ptr<Command>>
 					&commands) {
 				if (commands.find(command) == commands.end()) {
 					return (void)bot->http()
@@ -91,8 +112,10 @@ struct Help : Command {
 					{"❯ Cooldown", fmt::format("{}ms", cmd->options.cooldown)});
 				builder.add_field(
 					{"❯ Legend", fmt::format("`<> required, [] optional`")});
-				builder.set_footer(
-					{fmt::format("Prefix: `{}`", bot->prefix())});
+				builder.set_footer({fmt::format(
+					"Prefix: {}", bot->prefix().empty()
+									  ? "None"
+									  : fmt::format("`{}`", bot->prefix()))});
 
 				(void)bot->http()
 					.create_message(message.channel_id)
