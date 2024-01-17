@@ -21,19 +21,24 @@ struct Saber {
 	[[nodiscard]] ekizu::Snowflake bot_id() const { return m_bot_id; }
 	[[nodiscard]] CommandLoader &commands() { return m_commands; }
 	[[nodiscard]] const ekizu::HttpClient &http() const { return m_http; }
-	[[nodiscard]] ekizu::LruCache<ekizu::Snowflake, ekizu::Message> &
-	messages_cache() {
-		return m_messages_cache;
+	[[nodiscard]] ekizu::SnowflakeLruCache<ekizu::Guild> &guilds() {
+		return m_guild_cache;
 	}
-	[[nodiscard]] ekizu::LruCache<ekizu::Snowflake, ekizu::User> &
-	users_cache() {
-		return m_users_cache;
+	[[nodiscard]] ekizu::SnowflakeLruCache<
+		ekizu::SnowflakeLruCache<ekizu::GuildMember>> &
+	members() {
+		return m_guild_member_cache;
 	}
-	[[nodiscard]] ekizu::LruCache<
-		ekizu::Snowflake,
-		ekizu::LruCache<ekizu::Snowflake, ekizu::VoiceState>> &
-	voice_state_cache() {
-		return m_voice_states_cache;
+	[[nodiscard]] ekizu::SnowflakeLruCache<ekizu::Message> &messages() {
+		return m_message_cache;
+	}
+	[[nodiscard]] ekizu::SnowflakeLruCache<ekizu::User> &users() {
+		return m_user_cache;
+	}
+	[[nodiscard]] ekizu::SnowflakeLruCache<
+		ekizu::SnowflakeLruCache<ekizu::VoiceState>> &
+	voice_states() {
+		return m_voice_state_cache;
 	}
 	[[nodiscard]] const Config &config() const { return m_config; }
 	[[nodiscard]] ekizu::Snowflake owner_id() const {
@@ -41,6 +46,8 @@ struct Saber {
 	}
 	[[nodiscard]] std::string_view prefix() const { return config().prefix; }
 
+	SABER_EXPORT Result<ekizu::Permissions> get_guild_permissions(
+		ekizu::Snowflake guild_id, ekizu::Snowflake user_id);
 	SABER_EXPORT Result<ekizu::VoiceConnectionConfig *> join_voice_channel(
 		ekizu::Snowflake guild_id, ekizu::Snowflake channel_id,
 		const boost::asio::yield_context &yield);
@@ -74,18 +81,20 @@ struct Saber {
 	CommandLoader m_commands;
 	ekizu::HttpClient m_http;
 	std::optional<spdlog::logger> m_logger;
-	ekizu::LruCache<ekizu::Snowflake, ekizu::Message> m_messages_cache{500};
+	ekizu::SnowflakeLruCache<ekizu::Guild> m_guild_cache{500};
+	ekizu::SnowflakeLruCache<ekizu::SnowflakeLruCache<ekizu::GuildMember>>
+		m_guild_member_cache{500};
+	ekizu::LruCache<ekizu::Snowflake, ekizu::Message> m_message_cache{500};
 	ekizu::Shard m_shard;
 	ekizu::CurrentUser m_user;
-	ekizu::LruCache<ekizu::Snowflake, ekizu::User> m_users_cache{500};
+	ekizu::SnowflakeLruCache<ekizu::User> m_user_cache{500};
 	std::unordered_map<ekizu::Snowflake, ekizu::VoiceConnectionConfig>
 		m_voice_configs{500};
 	ekizu::SnowflakeLruCache<boost::asio::experimental::channel<void(
 		boost::system::error_code, const ekizu::VoiceConnectionConfig *)>>
 		m_voice_ready_channels{500};
-	ekizu::LruCache<ekizu::Snowflake,
-					ekizu::LruCache<ekizu::Snowflake, ekizu::VoiceState>>
-		m_voice_states_cache{500};
+	ekizu::SnowflakeLruCache<ekizu::SnowflakeLruCache<ekizu::VoiceState>>
+		m_voice_state_cache{500};
 	Config m_config;
 };
 }  // namespace saber

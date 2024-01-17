@@ -3,8 +3,6 @@
 
 #include <limits>
 #include <random>
-#include <string>
-#include <vector>
 
 namespace saber::util {
 template <typename T>
@@ -21,11 +19,6 @@ T get_random_number(T begin = (std::numeric_limits<T>::min)(),
 		return dis(gen);
 	}
 }
-
-std::vector<std::string> split(std::string_view s, std::string_view delimiter);
-std::string &ltrim(std::string &s);
-std::string &rtrim(std::string &s);
-std::string &trim(std::string &s);
 }  // namespace saber::util
 
 #endif	// SABER_UTIL_HPP

@@ -27,13 +27,13 @@ struct About : Command {
 
 		bot.log<ekizu::LogLevel::Info>(
 			"Fetched owner: {} from the API", owner.username);
-		bot.users_cache().put(owner.id, owner);
+		bot.users().put(owner.id, owner);
 
 		BOOST_OUTCOME_TRY(auto user, bot.http().get_current_user().send(yield));
 
 		bot.log<ekizu::LogLevel::Info>(
 			"Fetched our own user: {} from the API", user.username);
-		bot.users_cache().put(user.id, user);
+		bot.users().put(user.id, user);
 
 		about_embed =
 			ekizu::EmbedBuilder{}

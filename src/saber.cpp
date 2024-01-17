@@ -3,6 +3,7 @@
 
 #include <boost/asio/detached.hpp>
 #include <saber/saber.hpp>
+#include <unordered_set>
 
 namespace {
 template <typename... Func>
@@ -73,6 +74,31 @@ Saber::Saber(Config config)
 	m_logger->set_level(level);
 }
 
+SABER_EXPORT Result<ekizu::Permissions> Saber::get_guild_permissions(
+	ekizu::Snowflake guild_id, ekizu::Snowflake user_id) {
+	ekizu::Permissions ret{};
+	auto guild = m_guild_cache[guild_id];
+	if (!guild) { return ret; }
+
+	auto members = m_guild_member_cache[guild_id];
+	if (!members) { return ret; }
+
+	auto member = members->get(user_id);
+	if (!member) { return ret; }
+
+	std::unordered_set<ekizu::Snowflake> member_roles;
+
+	for (const auto &role : member->roles) { member_roles.insert(role); }
+
+	for (const auto &role : guild->roles) {
+		if (member_roles.find(role.id) != member_roles.end()) {
+			ret = ret | static_cast<ekizu::Permissions>(role.permissions);
+		}
+	}
+
+	return ret;
+}
+
 SABER_EXPORT Result<ekizu::VoiceConnectionConfig *> Saber::join_voice_channel(
 	ekizu::Snowflake guild_id, ekizu::Snowflake channel_id,
 	const boost::asio::yield_context &yield) {
@@ -120,19 +146,29 @@ void Saber::handle_event(ekizu::Event ev,
 	std::visit(
 		overload{
 			[this](const ekizu::GuildCreate &g) {
+				m_guild_cache.put(g.guild.id, g.guild);
+				m_guild_member_cache.put(
+					g.guild.id,
+					ekizu::SnowflakeLruCache<ekizu::GuildMember>{500});
+
+				for (const auto &member : g.guild.members) {
+					m_guild_member_cache[g.guild.id]->put(
+						member.user.id, member);
+				}
+
 				ekizu::SnowflakeLruCache<ekizu::VoiceState> lru{500};
 
 				for (const auto &voice_state : g.guild.voice_states) {
 					lru.put(voice_state.user_id, voice_state);
 				}
 
-				if (!m_voice_states_cache.has(g.guild.id)) {
-					m_voice_states_cache.put(g.guild.id, std::move(lru));
+				if (!m_voice_state_cache.has(g.guild.id)) {
+					m_voice_state_cache.put(g.guild.id, std::move(lru));
 				}
 			},
 			[this](const ekizu::VoiceStateUpdate &v) {
 				if (v.voice_state.guild_id) {
-					m_voice_states_cache[*v.voice_state.guild_id]->put(
+					m_voice_state_cache[*v.voice_state.guild_id]->put(
 						v.voice_state.user_id, v.voice_state);
 					m_voice_configs[*v.voice_state.guild_id].state =
 						v.voice_state;
@@ -157,8 +193,8 @@ void Saber::handle_event(ekizu::Event ev,
 				log<ekizu::LogLevel::Info>("Guilds: {}", r.guilds.size());
 			},
 			[this, &yield](const ekizu::MessageCreate &m) {
-				m_messages_cache.put(m.message.id, m.message);
-				m_users_cache.put(m.message.author.id, m.message.author);
+				m_message_cache.put(m.message.id, m.message);
+				m_user_cache.put(m.message.author.id, m.message.author);
 				m_commands.process_commands(m.message, yield);
 			},
 			[this](ekizu::Resumed) { log<ekizu::LogLevel::Info>("Resumed"); },

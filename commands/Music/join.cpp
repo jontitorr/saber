@@ -10,6 +10,7 @@ struct Join : Command {
 					  .name("join")
 					  .dirname(DIRNAME)
 					  .enabled(true)
+					  .guild_only(true)
 					  .usage("join")
 					  .description("Joins the voice channel.")
 					  .bot_permissions({ekizu::Permissions::SendMessages,
@@ -24,7 +25,7 @@ struct Join : Command {
 			auto guild, bot.http().get_guild(*message.guild_id).send(yield));
 
 		auto voice_state =
-			bot.voice_state_cache()
+			bot.voice_states()
 				.get(*message.guild_id)
 				.flat_map([&](auto &users) {
 					return users.get(message.author.id);

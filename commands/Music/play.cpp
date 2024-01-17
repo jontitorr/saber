@@ -34,7 +34,7 @@ struct Play : Command {
 			auto guild, bot.http().get_guild(*message.guild_id).send(yield));
 
 		auto voice_state =
-			bot.voice_state_cache()
+			bot.voice_states()
 				.get(*message.guild_id)
 				.flat_map([&](auto &users) {
 					return users.get(message.author.id);
@@ -72,7 +72,8 @@ struct Play : Command {
 		bp::process proc(
 			yield.get_executor(), exe,
 			{query, "-x", "--audio-format", "opus", "-f", "bestaudio", "-o",
-			 "%(id)s.opus", "-O", "%(id)s.opus", "--no-simulate"},
+			 "%(title)s.f%(format_id)s.opus", "-O",
+			 "%(title)s.f%(format_id)s.opus", "--no-simulate"},
 			bp::process_stdio{{}, rp, {}});
 		auto code = proc.async_wait(yield[ec]);
 		if (code != 0) { return boost::system::errc::executable_format_error; }

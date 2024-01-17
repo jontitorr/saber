@@ -1,15 +1,76 @@
+#include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/trim.hpp>
+#include <boost/range/adaptor/transformed.hpp>
 #include <filesystem>
 #include <saber/saber.hpp>
 #include <saber/util.hpp>
 
 namespace {
 #ifdef _WIN32
-constexpr std::string_view LIBRARY_EXTENSION{".dll"};
+constexpr boost::string_view LIBRARY_EXTENSION{".dll"};
 #elif __linux__
-constexpr std::string_view LIBRARY_EXTENSION{".so"};
+constexpr boost::string_view LIBRARY_EXTENSION{".so"};
 #elif __APPLE__
-constexpr std::string_view LIBRARY_EXTENSION{".dylib"};
+constexpr boost::string_view LIBRARY_EXTENSION{".dylib"};
 #endif
+
+using ekizu::Permissions;
+
+std::string permissions_to_string(Permissions permission) {
+	static const std::unordered_map<Permissions, std::string_view>
+		permission_strings{
+			{Permissions::CreateInstantInvite, "CREATE_INSTANT_INVITE"},
+			{Permissions::KickMembers, "KICK_MEMBERS"},
+			{Permissions::BanMembers, "BAN_MEMBERS"},
+			{Permissions::Administrator, "ADMINISTRATOR"},
+			{Permissions::ManageChannels, "MANAGE_CHANNELS"},
+			{Permissions::ManageGuild, "MANAGE_GUILD"},
+			{Permissions::AddReactions, "ADD_REACTIONS"},
+			{Permissions::ViewAuditLog, "VIEW_AUDIT_LOG"},
+			{Permissions::PrioritySpeaker, "PRIORITY_SPEAKER"},
+			{Permissions::Stream, "STREAM"},
+			{Permissions::ViewChannel, "VIEW_CHANNEL"},
+			{Permissions::SendMessages, "SEND_MESSAGES"},
+			{Permissions::SendTTSMessages, "SEND_TTS_MESSAGES"},
+			{Permissions::ManageMessages, "MANAGE_MESSAGES"},
+			{Permissions::EmbedLinks, "EMBED_LINKS"},
+			{Permissions::AttachFiles, "ATTACH_FILES"},
+			{Permissions::ReadMessageHistory, "READ_MESSAGE_HISTORY"},
+			{Permissions::MentionEveryone, "MENTION_EVERYONE"},
+			{Permissions::UseExternalEmojis, "USE_EXTERNAL_EMOJIS"},
+			{Permissions::ViewGuildInsights, "VIEW_GUILD_INSIGHTS"},
+			{Permissions::Connect, "CONNECT"},
+			{Permissions::Speak, "SPEAK"},
+			{Permissions::MuteMembers, "MUTE_MEMBERS"},
+			{Permissions::DeafenMembers, "DEAFEN_MEMBERS"},
+			{Permissions::MoveMembers, "MOVE_MEMBERS"},
+			{Permissions::UseVAD, "USE_VAD"},
+			{Permissions::ChangeNickname, "CHANGE_NICKNAME"},
+			{Permissions::ManageNicknames, "MANAGE_NICKNAMES"},
+			{Permissions::ManageRoles, "MANAGE_ROLES"},
+			{Permissions::ManageWebhooks, "MANAGE_WEBHOOKS"},
+			{Permissions::ManageGuildExpressions, "MANAGE_GUILD_EXPRESSIONS"},
+			{Permissions::UseApplicationCommands, "USE_APPLICATION_COMMANDS"},
+			{Permissions::RequestToSpeak, "REQUEST_TO_SPEAK"},
+			{Permissions::ManageEvents, "MANAGE_EVENTS"},
+			{Permissions::ManageThreads, "MANAGE_THREADS"},
+			{Permissions::CreatePublicThreads, "CREATE_PUBLIC_THREADS"},
+			{Permissions::CreatePrivateThreads, "CREATE_PRIVATE_THREADS"},
+			{Permissions::UseExternalStickers, "USE_EXTERNAL_STICKERS"},
+			{Permissions::SendMessagesInThreads, "SEND_MESSAGES_IN_THREADS"},
+			{Permissions::UseEmbeddedActivities, "USE_EMBEDDED_ACTIVITIES"},
+			{Permissions::ModerateMembers, "MODERATE_MEMBERS"},
+			{Permissions::ViewCreatorMonetizationAnalytics,
+			 "VIEW_CREATOR_MONETIZATION_ANALYTICS"},
+			{Permissions::UseSoundboard, "USE_SOUNDBOARD"},
+			{Permissions::UseExternalSounds, "USE_EXTERNAL_SOUNDS"},
+			{Permissions::SendVoiceMessages, "SEND_VOICE_MESSAGES"}};
+
+	auto it = permission_strings.find(permission);
+	return (it != permission_strings.end()) ? std::string{it->second}
+											: "UNKNOWN";
+}
 }  // namespace
 
 namespace saber {
@@ -76,12 +137,10 @@ void CommandLoader::load_all(const boost::asio::yield_context &yield) {
 
 	for (const auto &file : fs::directory_iterator(".")) {
 		const auto filename = file.path().filename().string();
+		boost::string_view filename_sv{filename};
 
-		if (filename.find("cmd_") != std::string::npos &&
-			(filename.size() >= LIBRARY_EXTENSION.size() &&
-			 filename.compare(
-				 filename.size() - LIBRARY_EXTENSION.size(),
-				 LIBRARY_EXTENSION.size(), LIBRARY_EXTENSION) == 0)) {
+		if (filename_sv.starts_with("cmd_") &&
+			filename_sv.ends_with(LIBRARY_EXTENSION)) {
 			load(fs::absolute(file.path()).lexically_normal().string(), yield);
 		}
 	}
@@ -94,7 +153,9 @@ void CommandLoader::process_commands(const ekizu::Message &message,
 	if (message.author.bot) { return; }
 
 	auto content = message.content.substr(m_parent.prefix().size());
-	auto args = util::split(util::trim(content), " ");
+	std::vector<std::string> args;
+	boost::algorithm::split(
+		args, boost::algorithm::trim_copy(content), boost::is_any_of(" "));
 
 	if (args.empty()) { return; }
 
@@ -111,12 +172,42 @@ void CommandLoader::process_commands(const ekizu::Message &message,
 
 	auto cmd = command_map.at(command_name);
 
-	if (cmd->options.guild_only && !message.guild_id) {
-		return (void)m_parent.http()
-			.create_message(message.channel_id)
-			.content("This command can only be used in guilds.")
-			.reply(message.id)
-			.send(yield);
+	if (cmd->options.guild_only) {
+		if (!message.guild_id) {
+			return (void)m_parent.http()
+				.create_message(message.channel_id)
+				.content("This command can only be used in guilds.")
+				.reply(message.id)
+				.send(yield);
+		}
+
+		auto bot_permissions = m_parent.get_guild_permissions(
+			*message.guild_id, m_parent.bot_id());
+
+		if (!bot_permissions) {
+			return (void)m_parent.http()
+				.create_message(message.channel_id)
+				.content("Failed to get bot permissions.")
+				.reply(message.id)
+				.send(yield);
+		}
+
+		// Check permissions.
+		for (const auto &perm : cmd->options.bot_permissions) {
+			if ((bot_permissions.value() & perm) != perm) {
+				return (void)m_parent.http()
+					.create_message(message.channel_id)
+					.content(fmt::format(
+						"Needed permissions: {}",
+						boost::algorithm::trim_copy(boost::algorithm::join(
+							cmd->options.bot_permissions |
+								boost::adaptors::transformed(
+									permissions_to_string),
+							", "))))
+					.reply(message.id)
+					.send(yield);
+			}
+		}
 	}
 
 	// NOTE: I'm seeing a case in which the commands will need the lock so it

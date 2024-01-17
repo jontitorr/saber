@@ -1,5 +1,6 @@
+#include <boost/algorithm/string/join.hpp>
+#include <boost/range/adaptor/transformed.hpp>
 #include <ekizu/embed_builder.hpp>
-#include <numeric>
 #include <saber/saber.hpp>
 #include <saber/util.hpp>
 
@@ -14,6 +15,7 @@ struct Help : Command {
 					  .enabled(true)
 					  .init(true)
 					  .usage("help")
+					  .examples({"help", "help ping"})
 					  .bot_permissions({ekizu::Permissions::SendMessages,
 										ekizu::Permissions::EmbedLinks})
 					  .cooldown(2000)
@@ -71,15 +73,16 @@ struct Help : Command {
 				}
 
 				if (!cmd->options.examples.empty()) {
-					std::string examples{};
-					examples.reserve((bot.prefix().length() + 3) *
-									 cmd->options.examples.size());
-					for (const auto &example : cmd->options.examples) {
-						examples +=
-							fmt::format("`{}{}`\n", bot.prefix(), example);
-					}
-
-					builder.add_field({"❯ Examples", examples});
+					builder.add_field(
+						{"❯ Examples",
+						 boost::algorithm::join(
+							 cmd->options.examples |
+								 boost::adaptors::transformed(
+									 [this](const auto &example) {
+										 return fmt::format(
+											 "`{}{}`\n", bot.prefix(), example);
+									 }),
+							 "")});
 				}
 
 				if (!cmd->options.usage.empty()) {
@@ -88,16 +91,16 @@ struct Help : Command {
 												cmd->options.usage)});
 				}
 
-				if (const auto &aliases = cmd->options.aliases;
-					!aliases.empty()) {
-					const auto aliases_str = std::accumulate(
-						std::next(aliases.begin()), aliases.end(),
-						fmt::format("`{}`", aliases[0]),
-						[](const auto &a, const auto &b) {
-							return fmt::format("{} | `{}`", a, b);
-						});
-
-					builder.add_field({"❯ Aliases", aliases_str});
+				if (!cmd->options.aliases.empty()) {
+					builder.add_field(
+						{"❯ Aliases",
+						 boost::algorithm::join(
+							 cmd->options.aliases |
+								 boost::adaptors::transformed(
+									 [](const auto &alias) {
+										 return fmt::format("`{}`", alias);
+									 }),
+							 " | ")});
 				}
 
 				builder.add_field(
@@ -106,8 +109,7 @@ struct Help : Command {
 					{"❯ Legend", fmt::format("`<> required, [] optional`")});
 				builder.set_footer({fmt::format(
 					"Prefix: {}",
-					bot.prefix().empty() ? "None"
-										 : fmt::format("`{}`", bot.prefix()))});
+					bot.prefix().empty() ? "None" : bot.prefix())});
 
 				(void)bot.http()
 					.create_message(message.channel_id)
