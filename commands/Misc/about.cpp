@@ -22,14 +22,13 @@ struct About : Command {
 	Result<> setup(const boost::asio::yield_context &yield) override {
 		bot.log<ekizu::LogLevel::Info>("Setting up About command");
 
-		BOOST_OUTCOME_TRY(
-			auto owner, bot.http().get_user(bot.owner_id()).send(yield));
+		SABER_TRY(auto owner, bot.http().get_user(bot.owner_id()).send(yield));
 
 		bot.log<ekizu::LogLevel::Info>(
 			"Fetched owner: {} from the API", owner.username);
 		bot.users().put(owner.id, owner);
 
-		BOOST_OUTCOME_TRY(auto user, bot.http().get_current_user().send(yield));
+		SABER_TRY(auto user, bot.http().get_current_user().send(yield));
 
 		bot.log<ekizu::LogLevel::Info>(
 			"Fetched our own user: {} from the API", user.username);
@@ -70,10 +69,10 @@ struct About : Command {
 			return boost::system::errc::operation_not_permitted;
 		}
 
-		BOOST_OUTCOME_TRY(bot.http()
-							  .create_message(message.channel_id)
-							  .embeds({*about_embed})
-							  .send(yield));
+		SABER_TRY(bot.http()
+					  .create_message(message.channel_id)
+					  .embeds({*about_embed})
+					  .send(yield));
 
 		return outcome::success();
 	}

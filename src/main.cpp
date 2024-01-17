@@ -2,7 +2,7 @@
 #include <saber/saber.hpp>
 
 async_main(const boost::asio::yield_context& yield) {
-	BOOST_OUTCOME_TRY(auto config, saber::Config::from_file("config.json"));
+	SABER_TRY(auto config, saber::Config::from_file("config.json"));
 
 	if (config.token.empty()) {
 		fmt::println(

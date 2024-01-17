@@ -27,10 +27,10 @@ struct Hype : Command {
 			hypu[util::get_random_number<size_t>(0, hypu.size() - 1)];
 		std::string msg = ":train2: CHOO CHOO " + selectedHype;
 
-		BOOST_OUTCOME_TRY(bot.http()
-							  .create_message(message.channel_id)
-							  .content(msg)
-							  .send(yield));
+		SABER_TRY(bot.http()
+					  .create_message(message.channel_id)
+					  .content(msg)
+					  .send(yield));
 
 		return outcome::success();
 	}

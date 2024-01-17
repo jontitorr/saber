@@ -45,11 +45,10 @@ struct XKCD : Command {
 
 		if (json.is_discarded() || !json.is_object()) {
 			bot.log<ekizu::LogLevel::Error>("Error parsing XKCD data");
-			BOOST_OUTCOME_TRY(
-				bot.http()
-					.create_message(message.channel_id)
-					.content("There was an error. Please try again.")
-					.send(yield));
+			SABER_TRY(bot.http()
+						  .create_message(message.channel_id)
+						  .content("There was an error. Please try again.")
+						  .send(yield));
 			return boost::system::errc::invalid_argument;
 		}
 
@@ -60,10 +59,10 @@ struct XKCD : Command {
 			json["img"].get<std::string>(), json["alt"].get<std::string>(),
 			comic_url);
 
-		BOOST_OUTCOME_TRY(bot.http()
-							  .create_message(message.channel_id)
-							  .content(msg)
-							  .send(yield));
+		SABER_TRY(bot.http()
+					  .create_message(message.channel_id)
+					  .content(msg)
+					  .send(yield));
 
 		return outcome::success();
 	}

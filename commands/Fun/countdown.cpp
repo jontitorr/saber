@@ -27,19 +27,19 @@ struct Countdown : Command {
 		boost::asio::deadline_timer timer{yield.get_executor()};
 
 		for (const auto &num : countdown) {
-			BOOST_OUTCOME_TRY(bot.http()
-								  .create_message(message.channel_id)
-								  .content(fmt::format("**:{}:**", num))
-								  .send(yield));
+			SABER_TRY(bot.http()
+						  .create_message(message.channel_id)
+						  .content(fmt::format("**:{}:**", num))
+						  .send(yield));
 
 			timer.expires_from_now(boost::posix_time::seconds(1));
 			timer.async_wait(yield);
 		}
 
-		BOOST_OUTCOME_TRY(bot.http()
-							  .create_message(message.channel_id)
-							  .content("**:ok:** DING DING DING")
-							  .send(yield));
+		SABER_TRY(bot.http()
+					  .create_message(message.channel_id)
+					  .content("**:ok:** DING DING DING")
+					  .send(yield));
 
 		return outcome::success();
 	}

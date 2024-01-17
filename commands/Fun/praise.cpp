@@ -20,10 +20,10 @@ struct Praise : Command {
 					 const boost::asio::yield_context &yield) override {
 		if (!args.empty()) { return outcome::success(); }
 
-		BOOST_OUTCOME_TRY(bot.http()
-							  .create_message(message.channel_id)
-							  .content("https://i.imgur.com/K8ySn3e.gif")
-							  .send(yield));
+		SABER_TRY(bot.http()
+					  .create_message(message.channel_id)
+					  .content("https://i.imgur.com/K8ySn3e.gif")
+					  .send(yield));
 
 		return outcome::success();
 	}

@@ -22,7 +22,7 @@ struct CSS : Command {
 			return boost::system::errc::operation_not_permitted;
 		}
 
-		BOOST_OUTCOME_TRY(
+		SABER_TRY(
 			bot.http()
 				.create_message(message.channel_id)
 				.content("https://media2.giphy.com/media/yYSSBtDgbbRzq/"

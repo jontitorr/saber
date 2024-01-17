@@ -30,18 +30,17 @@ struct Hentai : Command {
 					 const std::vector<std::string> &args,
 					 const boost::asio::yield_context &yield) override {
 		if (args.empty()) {
-			BOOST_OUTCOME_TRY(bot.http()
-								  .create_message(message.channel_id)
-								  .content("Please specify a query.")
-								  .reply(message.id)
-								  .send(yield));
+			SABER_TRY(bot.http()
+						  .create_message(message.channel_id)
+						  .content("Please specify a query.")
+						  .reply(message.id)
+						  .send(yield));
 
 			return outcome::success();
 		}
 
 		const auto query = fmt::to_string(fmt::join(args, ""));
-		BOOST_OUTCOME_TRY(
-			const auto sauce, search_hentai_subreddit(query, yield));
+		SABER_TRY(const auto sauce, search_hentai_subreddit(query, yield));
 		auto cm =
 			bot.http().create_message(message.channel_id).reply(message.id);
 
@@ -50,7 +49,7 @@ struct Hentai : Command {
 			return outcome::success();
 		}
 
-		BOOST_OUTCOME_TRY(cm.content(sauce).send(yield));
+		SABER_TRY(cm.content(sauce).send(yield));
 
 		return outcome::success();
 	}
@@ -58,7 +57,7 @@ struct Hentai : Command {
    private:
 	Result<std::string> search_hentai_subreddit(
 		std::string_view query, const boost::asio::yield_context &yield) {
-		BOOST_OUTCOME_TRY(
+		SABER_TRY(
 			auto res,
 			m_reddit.get()
 				.subreddit("hentai")
@@ -71,8 +70,7 @@ struct Hentai : Command {
 				.time("all")
 				.sort("relevance")
 				.send(yield));
-		BOOST_OUTCOME_TRY(
-			const auto data, ekizu::json_util::try_parse(res.body()));
+		SABER_TRY(const auto data, ekizu::json_util::try_parse(res.body()));
 
 		const auto &posts = data["data"]["children"];
 

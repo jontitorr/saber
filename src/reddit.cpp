@@ -68,7 +68,7 @@ SABER_EXPORT GetReddit Reddit::get() {
 	return GetReddit(
 		[this](std::string_view path, const boost::asio::yield_context& yield)
 			-> Result<net::HttpResponse> {
-			BOOST_OUTCOME_TRY(get_token(yield));
+			SABER_TRY(get_token(yield));
 			net::HttpRequest req{net::HttpMethod::get, path, 11};
 			req.set(net::http::field::authorization, m_token);
 			req.set(net::http::field::host, API_HOST);
@@ -81,15 +81,15 @@ SABER_EXPORT GetReddit Reddit::get() {
 Result<net::HttpResponse> Reddit::request(
 	const net::HttpRequest& req, const boost::asio::yield_context& yield) {
 	if (!m_http) {
-		BOOST_OUTCOME_TRY(auto http, net::HttpConnection::connect(
-										 "https://www.reddit.com", yield));
+		SABER_TRY(auto http, net::HttpConnection::connect(
+								 "https://www.reddit.com", yield));
 		m_http = std::move(http);
 	}
 
 	if (auto res = m_http->request(req, yield); res) { return res; }
 
-	BOOST_OUTCOME_TRY(auto http, net::HttpConnection::connect(
-									 "https://www.reddit.com", yield));
+	SABER_TRY(auto http,
+			  net::HttpConnection::connect("https://www.reddit.com", yield));
 	m_http = std::move(http);
 
 	return m_http->request(req, yield);
@@ -115,13 +115,13 @@ Result<std::string> Reddit::get_token(const boost::asio::yield_context& yield) {
 	req.set(net::http::field::user_agent, "insomnia/8.4.5");
 	req.prepare_payload();
 
-	BOOST_OUTCOME_TRY(auto res, request(req, yield));
+	SABER_TRY(auto res, request(req, yield));
 
 	if (res.result() != net::http::status::ok) {
 		return boost::system::errc::invalid_argument;
 	}
 
-	BOOST_OUTCOME_TRY(auto data, ekizu::json_util::try_parse(res.body()));
+	SABER_TRY(auto data, ekizu::json_util::try_parse(res.body()));
 
 	if (!ekizu::json_util::not_null_all(data, "token_type", "access_token")) {
 		return boost::system::errc::invalid_argument;

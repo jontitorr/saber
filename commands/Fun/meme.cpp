@@ -52,10 +52,10 @@ struct Meme : Command {
 				})
 				.build();
 
-		BOOST_OUTCOME_TRY(bot.http()
-							  .create_message(message.channel_id)
-							  .embeds({std::move(embed)})
-							  .send(yield));
+		SABER_TRY(bot.http()
+					  .create_message(message.channel_id)
+					  .embeds({std::move(embed)})
+					  .send(yield));
 
 		return outcome::success();
 	}
