@@ -17,7 +17,7 @@ struct Hentai : Command {
 					  .init(true)
 					  .bot_permissions({ekizu::Permissions::SendMessages,
 										ekizu::Permissions::EmbedLinks})
-					  .cooldown(2000)
+					  .cooldown(std::chrono::seconds(2))
 					  .build()),
 		  m_reddit{RedditOptions{
 			  std::getenv("SABER_REDDIT_USERNAME"),

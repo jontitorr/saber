@@ -2,6 +2,7 @@
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/range/adaptor/transformed.hpp>
+#include <boost/unordered/unordered_flat_map.hpp>
 #include <filesystem>
 #include <saber/saber.hpp>
 #include <saber/util.hpp>
@@ -18,7 +19,7 @@ constexpr boost::string_view LIBRARY_EXTENSION{".dylib"};
 using ekizu::Permissions;
 
 std::string permissions_to_string(Permissions permission) {
-	static const std::unordered_map<Permissions, std::string_view>
+	static const boost::unordered_flat_map<Permissions, std::string_view>
 		permission_strings{
 			{Permissions::CreateInstantInvite, "CREATE_INSTANT_INVITE"},
 			{Permissions::KickMembers, "KICK_MEMBERS"},
@@ -168,7 +169,7 @@ void CommandLoader::process_commands(const ekizu::Message &message,
 
 	std::unique_lock lk{m_mtx};
 
-	if (command_map.find(command_name) == command_map.end()) { return; }
+	if (!command_map.contains(command_name)) { return; }
 
 	auto cmd = command_map.at(command_name);
 
@@ -238,6 +239,31 @@ void CommandLoader::process_commands(const ekizu::Message &message,
 		}
 	}
 
+	if (m_parent.command_cooldowns().contains(message.author.id)) {
+		auto cooldown = m_parent.command_cooldowns().at(message.author.id);
+
+		if (cooldown.contains(command_name)) {
+			auto expiry = cooldown.at(command_name);
+			auto delta = std::chrono::floor<std::chrono::seconds>(
+							 expiry - std::chrono::steady_clock::now())
+							 .count();
+
+			if (delta > 0) {
+				return (void)m_parent.http()
+					.create_message(message.channel_id)
+					.content(fmt::format(
+						"Please wait {} more seconds before using this "
+						"command.",
+						delta))
+					.reply(message.id)
+					.send(yield);
+			}
+		}
+	}
+
+	m_parent.command_cooldowns()[message.author.id][command_name] =
+		std::chrono::steady_clock::now() + cmd->options.cooldown;
+
 	// NOTE: I'm seeing a case in which the commands will need the lock so it
 	// should be unlocked here. i.e. an unload command or something.
 	lk.unlock();
@@ -252,7 +278,7 @@ void CommandLoader::process_commands(const ekizu::Message &message,
 void CommandLoader::unload(const std::string &name) {
 	std::scoped_lock lk{m_mtx};
 
-	if (commands.find(name) == commands.end()) { return; }
+	if (!commands.contains(name)) { return; }
 
 	const auto command = std::move(command_map.at(name));
 
@@ -268,8 +294,8 @@ void CommandLoader::unload(const std::string &name) {
 }
 
 void CommandLoader::get_commands(
-	ekizu::FunctionView<void(
-		const std::unordered_map<std::string, std::shared_ptr<Command> > &)>
+	ekizu::FunctionView<void(const boost::unordered_flat_map<
+							 std::string, std::shared_ptr<Command> > &)>
 		cb) const {
 	std::scoped_lock lk{m_mtx};
 

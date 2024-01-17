@@ -16,7 +16,7 @@ struct About : Command {
 					  .description("Info about me.")
 					  .bot_permissions({ekizu::Permissions::SendMessages,
 										ekizu::Permissions::EmbedLinks})
-					  .cooldown(2000)
+					  .cooldown(std::chrono::seconds(2))
 					  .build()) {}
 
 	Result<> setup(const boost::asio::yield_context &yield) override {

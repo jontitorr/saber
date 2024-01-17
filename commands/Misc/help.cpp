@@ -18,7 +18,7 @@ struct Help : Command {
 					  .examples({"help", "help ping"})
 					  .bot_permissions({ekizu::Permissions::SendMessages,
 										ekizu::Permissions::EmbedLinks})
-					  .cooldown(2000)
+					  .cooldown(std::chrono::seconds(2))
 					  .build()) {}
 
 	Result<> execute(const ekizu::Message &message,
@@ -35,8 +35,8 @@ struct Help : Command {
 		std::string names;
 
 		bot.commands().get_commands(
-			[&](const std::unordered_map<std::string, std::shared_ptr<Command>>
-					&commands) {
+			[&](const boost::unordered_flat_map<
+				std::string, std::shared_ptr<Command>> &commands) {
 				for (const auto &command : commands) {
 					names += command.first + "\n";
 				}
@@ -54,10 +54,9 @@ struct Help : Command {
 							  const std::string &command,
 							  const boost::asio::yield_context &yield) {
 		bot.commands().get_commands(
-			[&, this](
-				const std::unordered_map<std::string, std::shared_ptr<Command>>
-					&commands) {
-				if (commands.find(command) == commands.end()) {
+			[&, this](const boost::unordered_flat_map<
+					  std::string, std::shared_ptr<Command>> &commands) {
+				if (!commands.contains(command)) {
 					return (void)bot.http()
 						.create_message(message.channel_id)
 						.content("Command not found.")
@@ -104,7 +103,12 @@ struct Help : Command {
 				}
 
 				builder.add_field(
-					{"❯ Cooldown", fmt::format("{}ms", cmd->options.cooldown)});
+					{"❯ Cooldown",
+					 fmt::format(
+						 "{}ms",
+						 std::chrono::duration_cast<std::chrono::milliseconds>(
+							 cmd->options.cooldown)
+							 .count())});
 				builder.add_field(
 					{"❯ Legend", fmt::format("`<> required, [] optional`")});
 				builder.set_footer({fmt::format(

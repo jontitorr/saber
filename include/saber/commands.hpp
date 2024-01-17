@@ -5,15 +5,20 @@
 #include <ekizu/permissions.hpp>
 // For the DIRNAME macro.
 #include <boost/core/span.hpp>
+#include <boost/unordered/unordered_flat_map.hpp>
+#include <chrono>
 #include <filesystem>
 #include <mutex>
 #include <saber/library.hpp>
-#include <unordered_map>
 #include <vector>
 
 namespace saber {
 struct Command;
 struct Saber;
+
+using CommandCooldown =
+	boost::unordered_flat_map<std::string,
+							  std::chrono::steady_clock::time_point>;
 
 struct CommandLoader {
 	explicit CommandLoader(Saber &parent);
@@ -30,21 +35,24 @@ struct CommandLoader {
 									   const boost::asio::yield_context &yield);
 	SABER_EXPORT void unload(const std::string &name);
 	SABER_EXPORT void get_commands(
-		ekizu::FunctionView<void(const std::unordered_map<
+		ekizu::FunctionView<void(const boost::unordered_flat_map<
 								 std::string, std::shared_ptr<Command> > &)>)
 		const;
 
    private:
 	mutable std::mutex m_mtx;
 	Saber &m_parent;
-	std::unordered_map<std::string, Library> commands;
-	std::unordered_map<std::string, std::shared_ptr<Command> > command_map;
-	std::unordered_map<std::string, std::shared_ptr<Command> > alias_map;
-	std::unordered_map<std::string, std::shared_ptr<Command> > slash_commands;
-	std::unordered_map<std::string, std::shared_ptr<Command> > user_commands;
-	std::unordered_map<
-		std::string,
-		std::unordered_map<std::string, std::chrono::steady_clock::time_point> >
+	boost::unordered_flat_map<std::string, Library> commands;
+	boost::unordered_flat_map<std::string, std::shared_ptr<Command> >
+		command_map;
+	boost::unordered_flat_map<std::string, std::shared_ptr<Command> > alias_map;
+	boost::unordered_flat_map<std::string, std::shared_ptr<Command> >
+		slash_commands;
+	boost::unordered_flat_map<std::string, std::shared_ptr<Command> >
+		user_commands;
+	boost::unordered_flat_map<
+		std::string, boost::unordered_flat_map<
+						 std::string, std::chrono::steady_clock::time_point> >
 		cooldowns;
 };
 
@@ -64,7 +72,7 @@ struct CommandOptions {
 	std::vector<ekizu::Permissions> bot_permissions;
 	bool nsfw{};
 	bool owner_only{};
-	uint32_t cooldown{};
+	std::chrono::steady_clock::duration cooldown;
 	std::vector<std::string> examples{};
 	std::string subcommands{};
 	bool activity{};
@@ -147,7 +155,8 @@ struct CommandOptionsBuilder {
 		return *this;
 	}
 
-	CommandOptionsBuilder &cooldown(uint32_t cooldown) {
+	template <typename... T>
+	CommandOptionsBuilder &cooldown(std::chrono::duration<T...> cooldown) {
 		m_options.cooldown = cooldown;
 		return *this;
 	}

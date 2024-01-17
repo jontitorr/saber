@@ -20,6 +20,10 @@ struct Saber {
 
 	[[nodiscard]] ekizu::Snowflake bot_id() const { return m_bot_id; }
 	[[nodiscard]] CommandLoader &commands() { return m_commands; }
+	[[nodiscard]] boost::unordered_flat_map<ekizu::Snowflake, CommandCooldown> &
+	command_cooldowns() {
+		return m_command_cooldowns;
+	}
 	[[nodiscard]] const ekizu::HttpClient &http() const { return m_http; }
 	[[nodiscard]] ekizu::SnowflakeLruCache<ekizu::Guild> &guilds() {
 		return m_guild_cache;
@@ -79,6 +83,8 @@ struct Saber {
 
 	ekizu::Snowflake m_bot_id;
 	CommandLoader m_commands;
+	boost::unordered_flat_map<ekizu::Snowflake, CommandCooldown>
+		m_command_cooldowns;
 	ekizu::HttpClient m_http;
 	std::optional<spdlog::logger> m_logger;
 	ekizu::SnowflakeLruCache<ekizu::Guild> m_guild_cache{500};

@@ -18,7 +18,7 @@ struct Meme : Command {
 								   "`dankmemes`, or `me_irl` subreddits.")
 					  .bot_permissions({ekizu::Permissions::SendMessages,
 										ekizu::Permissions::EmbedLinks})
-					  .cooldown(3000)
+					  .cooldown(std::chrono::seconds(3))
 					  .build()) {}
 
 	Result<> execute(const ekizu::Message &message,
