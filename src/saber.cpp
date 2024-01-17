@@ -105,7 +105,7 @@ SABER_EXPORT Result<ekizu::VoiceConnectionConfig *> Saber::join_voice_channel(
 	m_voice_ready_channels.emplace(guild_id, yield.get_executor());
 
 	auto channel = m_voice_ready_channels[guild_id];
-	EKIZU_TRY(m_shard.join_voice_channel(guild_id, channel_id, yield));
+	SABER_TRY(m_shard.join_voice_channel(guild_id, channel_id, yield));
 	channel->async_receive(yield);
 	m_voice_ready_channels.remove(guild_id);
 	return &m_voice_configs[guild_id];
@@ -195,7 +195,13 @@ void Saber::handle_event(ekizu::Event ev,
 			[this, &yield](const ekizu::MessageCreate &m) {
 				m_message_cache.put(m.message.id, m.message);
 				m_user_cache.put(m.message.author.id, m.message.author);
-				m_commands.process_commands(m.message, yield);
+
+				if (const auto res =
+						m_commands.process_commands(m.message, yield);
+					!res) {
+					log<ekizu::LogLevel::Warn>(
+						"Failed to process command: {}", res.error().message());
+				};
 			},
 			[this](ekizu::Resumed) { log<ekizu::LogLevel::Info>("Resumed"); },
 			[this](const auto &e) {

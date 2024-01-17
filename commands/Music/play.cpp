@@ -30,7 +30,7 @@ struct Play : Command {
 	Result<> execute(const ekizu::Message &message,
 					 [[maybe_unused]] const std::vector<std::string> &args,
 					 const boost::asio::yield_context &yield) override {
-		EKIZU_TRY(
+		SABER_TRY(
 			auto guild, bot.http().get_guild(*message.guild_id).send(yield));
 
 		auto voice_state =
@@ -41,7 +41,7 @@ struct Play : Command {
 				});
 
 		if (!voice_state) {
-			EKIZU_TRY(bot.http()
+			SABER_TRY(bot.http()
 						  .create_message(message.channel_id)
 						  .content("You are not in a voice channel!")
 						  .reply(message.id)
@@ -50,7 +50,7 @@ struct Play : Command {
 		}
 
 		if (args.empty()) {
-			EKIZU_TRY(bot.http()
+			SABER_TRY(bot.http()
 						  .create_message(message.channel_id)
 						  .content("Please specify a query.")
 						  .reply(message.id)
@@ -148,12 +148,12 @@ struct Play : Command {
 		int time_total{};
 
 		// Start our voice connection.
-		EKIZU_TRY(auto config,
+		SABER_TRY(auto config,
 				  bot.join_voice_channel(
 					  *message.guild_id, *voice_state->channel_id, yield));
-		EKIZU_TRY(auto conn, config->connect(yield));
-		EKIZU_TRY(conn.run(yield));
-		EKIZU_TRY(conn.speak(ekizu::SpeakerFlag::Microphone, yield));
+		SABER_TRY(auto conn, config->connect(yield));
+		SABER_TRY(conn.run(yield));
+		SABER_TRY(conn.speak(ekizu::SpeakerFlag::Microphone, yield));
 
 		while (ogg_sync_pageout(&oy, &og) == 1) {
 			// Start a new stream, using the serial number from the page.
@@ -193,7 +193,7 @@ struct Play : Command {
 				const auto duration = samples / 48;
 				time_total += duration;
 
-				EKIZU_TRY(conn.send_opus(
+				SABER_TRY(conn.send_opus(
 					boost::as_bytes(
 						boost::span{op.packet, static_cast<size_t>(op.bytes)}),
 					yield));
@@ -201,8 +201,8 @@ struct Play : Command {
 		}
 
 		bot.log("Played {}ms of audio", time_total);
-		EKIZU_TRY(conn.close(yield));
-		EKIZU_TRY(bot.leave_voice_channel(*message.guild_id, yield));
+		SABER_TRY(conn.close(yield));
+		SABER_TRY(bot.leave_voice_channel(*message.guild_id, yield));
 
 		return outcome::success();
 	}

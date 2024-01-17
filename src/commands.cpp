@@ -149,16 +149,16 @@ void CommandLoader::load_all(const boost::asio::yield_context &yield) {
 	m_parent.log<ekizu::LogLevel::Info>("Loaded {} commands", commands.size());
 }
 
-void CommandLoader::process_commands(const ekizu::Message &message,
-									 const boost::asio::yield_context &yield) {
-	if (message.author.bot) { return; }
+Result<> CommandLoader::process_commands(
+	const ekizu::Message &message, const boost::asio::yield_context &yield) {
+	if (message.author.bot) { return outcome::success(); }
 
 	auto content = message.content.substr(m_parent.prefix().size());
 	std::vector<std::string> args;
 	boost::algorithm::split(
 		args, boost::algorithm::trim_copy(content), boost::is_any_of(" "));
 
-	if (args.empty()) { return; }
+	if (args.empty()) { return outcome::success(); }
 
 	auto command_name = std::move(args.front());
 	args.erase(args.begin());
@@ -169,44 +169,48 @@ void CommandLoader::process_commands(const ekizu::Message &message,
 
 	std::unique_lock lk{m_mtx};
 
-	if (!command_map.contains(command_name)) { return; }
+	if (!command_map.contains(command_name)) { return outcome::success(); }
 
 	auto cmd = command_map.at(command_name);
 
 	if (cmd->options.guild_only) {
 		if (!message.guild_id) {
-			return (void)m_parent.http()
-				.create_message(message.channel_id)
-				.content("This command can only be used in guilds.")
-				.reply(message.id)
-				.send(yield);
+			SABER_TRY(m_parent.http()
+						  .create_message(message.channel_id)
+						  .content("This command can only be used in guilds.")
+						  .reply(message.id)
+						  .send(yield));
+			return outcome::success();
 		}
 
 		auto bot_permissions = m_parent.get_guild_permissions(
 			*message.guild_id, m_parent.bot_id());
 
 		if (!bot_permissions) {
-			return (void)m_parent.http()
-				.create_message(message.channel_id)
-				.content("Failed to get bot permissions.")
-				.reply(message.id)
-				.send(yield);
+			SABER_TRY(m_parent.http()
+						  .create_message(message.channel_id)
+						  .content("Failed to get bot permissions.")
+						  .reply(message.id)
+						  .send(yield));
+			return outcome::success();
 		}
 
 		// Check permissions.
 		for (const auto &perm : cmd->options.bot_permissions) {
 			if ((bot_permissions.value() & perm) != perm) {
-				return (void)m_parent.http()
-					.create_message(message.channel_id)
-					.content(fmt::format(
-						"Needed permissions: {}",
-						boost::algorithm::trim_copy(boost::algorithm::join(
-							cmd->options.bot_permissions |
-								boost::adaptors::transformed(
-									permissions_to_string),
-							", "))))
-					.reply(message.id)
-					.send(yield);
+				SABER_TRY(
+					m_parent.http()
+						.create_message(message.channel_id)
+						.content(fmt::format(
+							"Needed permissions: {}",
+							boost::algorithm::trim_copy(boost::algorithm::join(
+								cmd->options.bot_permissions |
+									boost::adaptors::transformed(
+										permissions_to_string),
+								", "))))
+						.reply(message.id)
+						.send(yield));
+				return outcome::success();
 			}
 		}
 
@@ -215,26 +219,29 @@ void CommandLoader::process_commands(const ekizu::Message &message,
 			*message.guild_id, message.author.id);
 
 		if (!member_permissions) {
-			return (void)m_parent.http()
-				.create_message(message.channel_id)
-				.content("Failed to get member permissions.")
-				.reply(message.id)
-				.send(yield);
+			SABER_TRY(m_parent.http()
+						  .create_message(message.channel_id)
+						  .content("Failed to get member permissions.")
+						  .reply(message.id)
+						  .send(yield));
+			return outcome::success();
 		}
 
 		for (const auto &perm : cmd->options.member_permissions) {
 			if ((member_permissions.value() & perm) != perm) {
-				return (void)m_parent.http()
-					.create_message(message.channel_id)
-					.content(fmt::format(
-						"You need the following permissions: {}",
-						boost::algorithm::trim_copy(boost::algorithm::join(
-							cmd->options.member_permissions |
-								boost::adaptors::transformed(
-									permissions_to_string),
-							", "))))
-					.reply(message.id)
-					.send(yield);
+				SABER_TRY(
+					m_parent.http()
+						.create_message(message.channel_id)
+						.content(fmt::format(
+							"You need the following permissions: {}",
+							boost::algorithm::trim_copy(boost::algorithm::join(
+								cmd->options.member_permissions |
+									boost::adaptors::transformed(
+										permissions_to_string),
+								", "))))
+						.reply(message.id)
+						.send(yield));
+				return outcome::success();
 			}
 		}
 	}
@@ -249,14 +256,16 @@ void CommandLoader::process_commands(const ekizu::Message &message,
 							 .count();
 
 			if (delta > 0) {
-				return (void)m_parent.http()
-					.create_message(message.channel_id)
-					.content(fmt::format(
-						"Please wait {} more seconds before using this "
-						"command.",
-						delta))
-					.reply(message.id)
-					.send(yield);
+				SABER_TRY(
+					m_parent.http()
+						.create_message(message.channel_id)
+						.content(fmt::format(
+							"Please wait {} more seconds before using this "
+							"command.",
+							delta))
+						.reply(message.id)
+						.send(yield));
+				return outcome::success();
 			}
 		}
 	}
@@ -268,11 +277,7 @@ void CommandLoader::process_commands(const ekizu::Message &message,
 	// should be unlocked here. i.e. an unload command or something.
 	lk.unlock();
 
-	if (auto res = cmd->execute(message, args, yield); !res) {
-		m_parent.log<ekizu::LogLevel::Error>(
-			"Failed to execute command {}: {}", command_name,
-			res.error().message());
-	}
+	return cmd->execute(message, args, yield);
 }
 
 void CommandLoader::unload(const std::string &name) {

@@ -21,7 +21,7 @@ struct Join : Command {
 	Result<> execute(const ekizu::Message &message,
 					 [[maybe_unused]] const std::vector<std::string> &args,
 					 const boost::asio::yield_context &yield) override {
-		EKIZU_TRY(
+		SABER_TRY(
 			auto guild, bot.http().get_guild(*message.guild_id).send(yield));
 
 		auto voice_state =
@@ -32,7 +32,7 @@ struct Join : Command {
 				});
 
 		if (!voice_state) {
-			EKIZU_TRY(bot.http()
+			SABER_TRY(bot.http()
 						  .create_message(message.channel_id)
 						  .content("You are not in a voice channel!")
 						  .reply(message.id)
@@ -40,7 +40,7 @@ struct Join : Command {
 			return outcome::success();
 		}
 
-		EKIZU_TRY(bot.join_voice_channel(
+		SABER_TRY(bot.join_voice_channel(
 			*message.guild_id, *voice_state->channel_id, yield));
 
 		return outcome::success();

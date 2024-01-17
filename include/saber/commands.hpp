@@ -31,8 +31,8 @@ struct CommandLoader {
 	SABER_EXPORT void load(std::string_view path,
 						   const boost::asio::yield_context &yield);
 	SABER_EXPORT void load_all(const boost::asio::yield_context &yield);
-	SABER_EXPORT void process_commands(const ekizu::Message &message,
-									   const boost::asio::yield_context &yield);
+	SABER_EXPORT Result<> process_commands(
+		const ekizu::Message &message, const boost::asio::yield_context &yield);
 	SABER_EXPORT void unload(const std::string &name);
 	SABER_EXPORT void get_commands(
 		ekizu::FunctionView<void(const boost::unordered_flat_map<
