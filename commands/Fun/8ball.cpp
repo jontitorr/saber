@@ -9,7 +9,7 @@ struct Eightball : Command {
 			  creator,
 			  CommandOptionsBuilder()
 				  .name("8ball")
-				  .dirname(DIRNAME)
+				  .category(DIRNAME)
 				  .enabled(true)
 				  .aliases({"eight-ball", "eightball"})
 				  .usage("8ball <question>")

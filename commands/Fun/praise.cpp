@@ -8,7 +8,7 @@ struct Praise : Command {
 		: Command(creator,
 				  CommandOptionsBuilder()
 					  .name("praise")
-					  .dirname(DIRNAME)
+					  .category(DIRNAME)
 					  .enabled(true)
 					  .usage("praise")
 					  .bot_permissions({ekizu::Permissions::SendMessages,

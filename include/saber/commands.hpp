@@ -58,7 +58,7 @@ struct CommandLoader {
 
 struct CommandOptions {
 	std::string name;
-	std::string dirname;
+	std::string category;
 	bool enabled{};
 	bool init{};
 	bool guild_only{};
@@ -77,7 +77,6 @@ struct CommandOptions {
 	std::string subcommands{};
 	bool activity{};
 	bool voice_only{};
-	std::string category{};
 };
 
 struct CommandOptionsBuilder {
@@ -88,8 +87,8 @@ struct CommandOptionsBuilder {
 		return *this;
 	}
 
-	CommandOptionsBuilder &dirname(std::string_view dirname) {
-		m_options.dirname = std::string{dirname};
+	CommandOptionsBuilder &category(std::string_view category) {
+		m_options.category = std::string{category};
 		return *this;
 	}
 
@@ -181,11 +180,6 @@ struct CommandOptionsBuilder {
 		return *this;
 	}
 
-	CommandOptionsBuilder &category(std::string_view category) {
-		m_options.category = std::string{category};
-		return *this;
-	}
-
    private:
 	CommandOptions m_options;
 };
@@ -193,9 +187,6 @@ struct CommandOptionsBuilder {
 struct Command {
 	Command(Saber &instigator, CommandOptions options_)
 		: bot{instigator}, options{std::move(options_)} {
-		// Determine category based on the name of the folder the command is in.
-		options.category = !options.dirname.empty() ? options.dirname : "Other";
-
 		// If the command is a slash command, make sure to make the appropriate
 		// JSON data.
 		if (options.slash) {

@@ -8,7 +8,7 @@ struct CSS : Command {
 		: Command(creator,
 				  CommandOptionsBuilder()
 					  .name("css")
-					  .dirname(DIRNAME)
+					  .category(DIRNAME)
 					  .enabled(true)
 					  .usage("css")
 					  .bot_permissions({ekizu::Permissions::SendMessages,

@@ -9,7 +9,7 @@ struct XKCD : Command {
 		: Command(creator,
 				  CommandOptionsBuilder()
 					  .name("xkcd")
-					  .dirname(DIRNAME)
+					  .category(DIRNAME)
 					  .enabled(true)
 					  .usage("xkcd")
 					  .bot_permissions({ekizu::Permissions::SendMessages,

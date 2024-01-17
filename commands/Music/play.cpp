@@ -17,7 +17,7 @@ struct Play : Command {
 		: Command(creator,
 				  CommandOptionsBuilder()
 					  .name("play")
-					  .dirname(DIRNAME)
+					  .category(DIRNAME)
 					  .enabled(true)
 					  .guild_only(true)
 					  .usage("play <query>")

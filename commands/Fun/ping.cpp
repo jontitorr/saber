@@ -8,7 +8,7 @@ struct Ping : Command {
 		: Command(creator,
 				  CommandOptionsBuilder()
 					  .name("ping")
-					  .dirname(DIRNAME)
+					  .category(DIRNAME)
 					  .enabled(true)
 					  .usage("ping")
 					  .description("Replies with pong.")

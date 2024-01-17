@@ -8,7 +8,7 @@ struct Hype : Command {
 		: Command(creator,
 				  CommandOptionsBuilder()
 					  .name("hype")
-					  .dirname(DIRNAME)
+					  .category(DIRNAME)
 					  .enabled(true)
 					  .aliases({"hypu", "train"})
 					  .usage("hype")

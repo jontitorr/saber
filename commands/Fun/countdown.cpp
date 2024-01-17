@@ -8,7 +8,7 @@ struct Countdown : Command {
 		: Command(creator,
 				  CommandOptionsBuilder()
 					  .name("countdown")
-					  .dirname(DIRNAME)
+					  .category(DIRNAME)
 					  .enabled(true)
 					  .usage("countdown")
 					  .description("Countdown from 5.")

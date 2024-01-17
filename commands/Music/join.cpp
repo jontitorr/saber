@@ -8,7 +8,7 @@ struct Join : Command {
 		: Command(creator,
 				  CommandOptionsBuilder()
 					  .name("join")
-					  .dirname(DIRNAME)
+					  .category(DIRNAME)
 					  .enabled(true)
 					  .guild_only(true)
 					  .usage("join")

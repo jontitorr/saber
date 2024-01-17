@@ -12,7 +12,7 @@ struct Hentai : Command {
 		: Command(creator,
 				  CommandOptionsBuilder()
 					  .name("hentai")
-					  .dirname(DIRNAME)
+					  .category(DIRNAME)
 					  .enabled(true)
 					  .init(true)
 					  .bot_permissions({ekizu::Permissions::SendMessages,

@@ -3,6 +3,7 @@
 #include <ekizu/embed_builder.hpp>
 #include <saber/saber.hpp>
 #include <saber/util.hpp>
+#include <unordered_set>
 
 using namespace saber;
 
@@ -11,7 +12,7 @@ struct Help : Command {
 		: Command(creator,
 				  CommandOptionsBuilder()
 					  .name("help")
-					  .dirname(DIRNAME)
+					  .category(DIRNAME)
 					  .enabled(true)
 					  .init(true)
 					  .usage("help")
@@ -42,10 +43,11 @@ struct Help : Command {
 				}
 			});
 
-		(void)bot.http()
-			.create_message(message.channel_id)
-			.content("Available commands:\n" + names)
-			.send(yield);
+		SABER_TRY(bot.http()
+					  .create_message(message.channel_id)
+					  .content("Available commands:\n" + names)
+					  .reply(message.id)
+					  .send(yield));
 
 		return ekizu::outcome::success();
 	}

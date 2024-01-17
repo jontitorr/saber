@@ -11,7 +11,7 @@ struct Meme : Command {
 		: Command(creator,
 				  CommandOptionsBuilder()
 					  .name("meme")
-					  .dirname(DIRNAME)
+					  .category(DIRNAME)
 					  .enabled(true)
 					  .usage("meme")
 					  .description("Displays a random meme from the `memes`, "

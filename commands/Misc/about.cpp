@@ -9,7 +9,7 @@ struct About : Command {
 		: Command(creator,
 				  CommandOptionsBuilder()
 					  .name("about")
-					  .dirname(DIRNAME)
+					  .category(DIRNAME)
 					  .enabled(true)
 					  .init(true)
 					  .usage("about")
