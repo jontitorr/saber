@@ -208,6 +208,34 @@ void CommandLoader::process_commands(const ekizu::Message &message,
 					.send(yield);
 			}
 		}
+
+		// Check member permissions
+		auto member_permissions = m_parent.get_guild_permissions(
+			*message.guild_id, message.author.id);
+
+		if (!member_permissions) {
+			return (void)m_parent.http()
+				.create_message(message.channel_id)
+				.content("Failed to get member permissions.")
+				.reply(message.id)
+				.send(yield);
+		}
+
+		for (const auto &perm : cmd->options.member_permissions) {
+			if ((member_permissions.value() & perm) != perm) {
+				return (void)m_parent.http()
+					.create_message(message.channel_id)
+					.content(fmt::format(
+						"You need the following permissions: {}",
+						boost::algorithm::trim_copy(boost::algorithm::join(
+							cmd->options.member_permissions |
+								boost::adaptors::transformed(
+									permissions_to_string),
+							", "))))
+					.reply(message.id)
+					.send(yield);
+			}
+		}
 	}
 
 	// NOTE: I'm seeing a case in which the commands will need the lock so it
