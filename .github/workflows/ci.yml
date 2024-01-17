@@ -40,13 +40,13 @@ jobs:
           - {
               os: windows-2022,
               arch: x64,
-              binary_path: Release/saber.exe,
+              binary_path: saber.exe,
               output_name: saber-windows-x64.exe,
             }
           - {
               os: windows-2022,
               arch: x86,
-              binary_path: Release/saber.exe,
+              binary_path: saber.exe,
               output_name: saber-windows-x86.exe,
             }
 
@@ -96,17 +96,17 @@ jobs:
 
       - name: Move binary (Linux)
         if: runner.os == 'Linux'
-        run: mv build/${{ matrix.config.binary_path }} build/${{ matrix.config.output_name }}
+        run: mv build/bin/${{ matrix.config.binary_path }} build/bin/${{ matrix.config.output_name }}
 
       - name: Move binary (Windows)
         if: runner.os == 'Windows'
-        run: Move-Item build/${{ matrix.config.binary_path }} build/${{ matrix.config.output_name }}
+        run: Move-Item build/bin/${{ matrix.config.binary_path }} build/bin/${{ matrix.config.output_name }}
 
       - name: Upload Binary
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.config.output_name }}
-          path: ./build/${{ matrix.config.output_name }}
+          path: ./build/bin/${{ matrix.config.output_name }}
           if-no-files-found: error
 
   release:
