@@ -16,7 +16,7 @@ overload(Func...) -> overload<Func...>;
 
 namespace saber {
 Saber::Saber(Config config)
-	: m_commands{this},
+	: m_commands{*this},
 	  m_http{config.token},
 	  m_shard{ekizu::ShardId::ONE, config.token, ekizu::Intents::AllIntents},
 	  m_config{std::move(config)} {

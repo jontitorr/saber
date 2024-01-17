@@ -4,7 +4,7 @@
 using namespace saber;
 
 struct Eightball : Command {
-	explicit Eightball(Saber *creator)
+	explicit Eightball(Saber &creator)
 		: Command(
 			  creator,
 			  CommandOptionsBuilder()
@@ -23,7 +23,7 @@ struct Eightball : Command {
 					 const std::vector<std::string> &args,
 					 const boost::asio::yield_context &yield) override {
 		if (args.empty()) {
-			BOOST_OUTCOME_TRY(bot->http()
+			BOOST_OUTCOME_TRY(bot.http()
 								  .create_message(message.channel_id)
 								  .content("You need to ask a question!")
 								  .send(yield));
@@ -33,7 +33,7 @@ struct Eightball : Command {
 		// Otherwise, pick a random response and send it
 		/// Use random engine.
 		BOOST_OUTCOME_TRY(
-			bot->http()
+			bot.http()
 				.create_message(message.channel_id)
 				.content(responses[util::get_random_number<size_t>(
 					0, responses.size() - 1)])

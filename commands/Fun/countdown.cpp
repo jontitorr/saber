@@ -4,7 +4,7 @@
 using namespace saber;
 
 struct Countdown : Command {
-	explicit Countdown(Saber *creator)
+	explicit Countdown(Saber &creator)
 		: Command(creator,
 				  CommandOptionsBuilder()
 					  .name("countdown")
@@ -27,7 +27,7 @@ struct Countdown : Command {
 		boost::asio::deadline_timer timer{yield.get_executor()};
 
 		for (const auto &num : countdown) {
-			BOOST_OUTCOME_TRY(bot->http()
+			BOOST_OUTCOME_TRY(bot.http()
 								  .create_message(message.channel_id)
 								  .content(fmt::format("**:{}:**", num))
 								  .send(yield));
@@ -36,7 +36,7 @@ struct Countdown : Command {
 			timer.async_wait(yield);
 		}
 
-		BOOST_OUTCOME_TRY(bot->http()
+		BOOST_OUTCOME_TRY(bot.http()
 							  .create_message(message.channel_id)
 							  .content("**:ok:** DING DING DING")
 							  .send(yield));

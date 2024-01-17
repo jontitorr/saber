@@ -13,27 +13,26 @@ constexpr std::string_view LIBRARY_EXTENSION{".dylib"};
 }  // namespace
 
 namespace saber {
-CommandLoader::CommandLoader(Saber *parent) : m_parent{parent} {}
+CommandLoader::CommandLoader(Saber &parent) : m_parent{parent} {}
 
 void CommandLoader::load(std::string_view path,
 						 const boost::asio::yield_context &yield) {
 	auto library = Library::create(path);
 
 	if (!library) {
-		m_parent->log<ekizu::LogLevel::Error>(
+		m_parent.log<ekizu::LogLevel::Error>(
 			"Failed to load command {}: {}", path, library.error().message());
 		return;
 	}
 
 	auto init_command =
-		library.value().get<Command *(*)(Saber *)>("init_command");
+		library.value().get<Command *(*)(Saber &)>("init_command");
 	auto free_command =
 		library.value().get<void (*)(Command *)>("free_command");
 
 	if (!init_command || !free_command) { return; }
 
 	std::scoped_lock lk{m_mtx};
-
 	auto *command_ptr = (init_command.value())(m_parent);
 
 	if (command_ptr == nullptr) { return; }
@@ -42,7 +41,7 @@ void CommandLoader::load(std::string_view path,
 		auto res = command_ptr->setup(yield);
 
 		if (!res) {
-			m_parent->log<ekizu::LogLevel::Error>(
+			m_parent.log<ekizu::LogLevel::Error>(
 				"Failed to setup command {}: {}", command_ptr->options.name,
 				res.error().message());
 			return;
@@ -69,7 +68,7 @@ void CommandLoader::load(std::string_view path,
 		user_commands.insert_or_assign(command_name, loader);
 	}
 
-	m_parent->log<ekizu::LogLevel::Info>("Loaded command {}", command_name);
+	m_parent.log<ekizu::LogLevel::Info>("Loaded command {}", command_name);
 }
 
 void CommandLoader::load_all(const boost::asio::yield_context &yield) {
@@ -87,14 +86,14 @@ void CommandLoader::load_all(const boost::asio::yield_context &yield) {
 		}
 	}
 
-	m_parent->log<ekizu::LogLevel::Info>("Loaded {} commands", commands.size());
+	m_parent.log<ekizu::LogLevel::Info>("Loaded {} commands", commands.size());
 }
 
 void CommandLoader::process_commands(const ekizu::Message &message,
 									 const boost::asio::yield_context &yield) {
 	if (message.author.bot) { return; }
 
-	auto content = message.content.substr(m_parent->prefix().size());
+	auto content = message.content.substr(m_parent.prefix().size());
 	auto args = util::split(util::trim(content), " ");
 
 	if (args.empty()) { return; }
@@ -113,7 +112,7 @@ void CommandLoader::process_commands(const ekizu::Message &message,
 	auto cmd = command_map.at(command_name);
 
 	if (cmd->options.guild_only && !message.guild_id) {
-		return (void)m_parent->http()
+		return (void)m_parent.http()
 			.create_message(message.channel_id)
 			.content("This command can only be used in guilds.")
 			.reply(message.id)
@@ -125,7 +124,7 @@ void CommandLoader::process_commands(const ekizu::Message &message,
 	lk.unlock();
 
 	if (auto res = cmd->execute(message, args, yield); !res) {
-		m_parent->log<ekizu::LogLevel::Error>(
+		m_parent.log<ekizu::LogLevel::Error>(
 			"Failed to execute command {}: {}", command_name,
 			res.error().message());
 	}
@@ -146,7 +145,7 @@ void CommandLoader::unload(const std::string &name) {
 	command_map.erase(name);
 	slash_commands.erase(name);
 	user_commands.erase(name);
-	m_parent->log<ekizu::LogLevel::Info>("Unloaded command {}", name);
+	m_parent.log<ekizu::LogLevel::Info>("Unloaded command {}", name);
 }
 
 void CommandLoader::get_commands(

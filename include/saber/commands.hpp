@@ -16,7 +16,7 @@ struct Command;
 struct Saber;
 
 struct CommandLoader {
-	explicit CommandLoader(Saber *parent);
+	explicit CommandLoader(Saber &parent);
 	CommandLoader(const CommandLoader &) = delete;
 	CommandLoader &operator=(const CommandLoader &) = delete;
 	CommandLoader(CommandLoader &&) = delete;
@@ -36,7 +36,7 @@ struct CommandLoader {
 
    private:
 	mutable std::mutex m_mtx;
-	Saber *m_parent{};
+	Saber &m_parent;
 	std::unordered_map<std::string, Library> commands;
 	std::unordered_map<std::string, std::shared_ptr<Command> > command_map;
 	std::unordered_map<std::string, std::shared_ptr<Command> > alias_map;
@@ -182,7 +182,7 @@ struct CommandOptionsBuilder {
 };
 
 struct Command {
-	Command(Saber *instigator, CommandOptions options_)
+	Command(Saber &instigator, CommandOptions options_)
 		: bot{instigator}, options{std::move(options_)} {
 		// Determine category based on the name of the folder the command is in.
 		options.category = !options.dirname.empty() ? options.dirname : "Other";
@@ -219,7 +219,7 @@ struct Command {
 							 const std::vector<std::string> &args,
 							 const boost::asio::yield_context &yield) = 0;
 
-	Saber *bot{};
+	Saber &bot;
 	CommandOptions options;
 };
 
@@ -227,14 +227,14 @@ struct Command {
 #define COMMAND_ALLOC(name)                                              \
 	extern "C" {                                                         \
 	__attribute__((visibility("default"))) saber::Command *init_command( \
-		saber::Saber *parent) {                                          \
+		saber::Saber &parent) {                                          \
 		return new name(parent);                                         \
 	}                                                                    \
 	}
 #elif defined(_WIN32)
 #define COMMAND_ALLOC(name)                                                    \
 	extern "C" {                                                               \
-	__declspec(dllexport) saber::Command *init_command(saber::Saber *parent) { \
+	__declspec(dllexport) saber::Command *init_command(saber::Saber &parent) { \
 		return new name(parent);                                               \
 	}                                                                          \
 	}

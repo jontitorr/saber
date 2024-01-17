@@ -5,7 +5,7 @@
 using namespace saber;
 
 struct XKCD : Command {
-	explicit XKCD(Saber *creator)
+	explicit XKCD(Saber &creator)
 		: Command(creator,
 				  CommandOptionsBuilder()
 					  .name("xkcd")
@@ -32,8 +32,8 @@ struct XKCD : Command {
 			api_url.replace(api_url.find("{}"), 2, "/"), yield);
 
 		if (!res || res.value().result_int() != 200) {
-			bot->log<ekizu::LogLevel::Error>("Error while fetching XKCD data");
-			(void)bot->http()
+			bot.log<ekizu::LogLevel::Error>("Error while fetching XKCD data");
+			(void)bot.http()
 				.create_message(message.channel_id)
 				.content("There was an error. Please try again.")
 				.send(yield);
@@ -44,9 +44,9 @@ struct XKCD : Command {
 			nlohmann::json::parse(res.value().body(), nullptr, false);
 
 		if (json.is_discarded() || !json.is_object()) {
-			bot->log<ekizu::LogLevel::Error>("Error parsing XKCD data");
+			bot.log<ekizu::LogLevel::Error>("Error parsing XKCD data");
 			BOOST_OUTCOME_TRY(
-				bot->http()
+				bot.http()
 					.create_message(message.channel_id)
 					.content("There was an error. Please try again.")
 					.send(yield));
@@ -60,7 +60,7 @@ struct XKCD : Command {
 			json["img"].get<std::string>(), json["alt"].get<std::string>(),
 			comic_url);
 
-		BOOST_OUTCOME_TRY(bot->http()
+		BOOST_OUTCOME_TRY(bot.http()
 							  .create_message(message.channel_id)
 							  .content(msg)
 							  .send(yield));

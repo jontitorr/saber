@@ -4,7 +4,7 @@
 using namespace saber;
 
 struct Praise : Command {
-	explicit Praise(Saber *creator)
+	explicit Praise(Saber &creator)
 		: Command(creator,
 				  CommandOptionsBuilder()
 					  .name("praise")
@@ -20,7 +20,7 @@ struct Praise : Command {
 					 const boost::asio::yield_context &yield) override {
 		if (!args.empty()) { return outcome::success(); }
 
-		BOOST_OUTCOME_TRY(bot->http()
+		BOOST_OUTCOME_TRY(bot.http()
 							  .create_message(message.channel_id)
 							  .content("https://i.imgur.com/K8ySn3e.gif")
 							  .send(yield));

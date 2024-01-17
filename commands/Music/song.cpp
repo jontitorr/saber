@@ -2,30 +2,35 @@
 #include <opusfile.h>
 
 #include <boost/asio/stream_file.hpp>
-#include <boost/process/v2.hpp>
 #include <saber/saber.hpp>
 #include <saber/util.hpp>
-
-#include "saber/commands.hpp"
 
 static constexpr uint32_t SAMPLE_RATE{48'000};
 
 using namespace saber;
 
-struct Play : Command {
-	explicit Play(Saber &creator)
-		: Command(creator,
-				  CommandOptionsBuilder()
-					  .name("play")
-					  .dirname(DIRNAME)
-					  .enabled(true)
-					  .guild_only(true)
-					  .usage("play <query>")
-					  .description("Play a youtube video in the voice channel.")
-					  .bot_permissions({ekizu::Permissions::SendMessages,
-										ekizu::Permissions::EmbedLinks})
-					  .cooldown(3000)
-					  .build()) {}
+struct Song : Command {
+	explicit Song(Saber &creator)
+		: Command(
+			  creator,
+			  CommandOptions{
+				  "song",
+				  DIRNAME,
+				  true,
+				  {},
+				  {},
+				  {},
+				  {},
+				  {},
+				  "song",
+				  "Songs the voice channel.",
+				  {ekizu::Permissions::SendMessages,
+				   ekizu::Permissions::EmbedLinks},
+				  {},
+				  {},
+				  {},
+				  3000,
+			  }) {}
 
 	Result<> execute(const ekizu::Message &message,
 					 [[maybe_unused]] const std::vector<std::string> &args,
@@ -49,60 +54,17 @@ struct Play : Command {
 			return outcome::success();
 		}
 
-		if (args.empty()) {
-			EKIZU_TRY(bot.http()
-						  .create_message(message.channel_id)
-						  .content("Please specify a query.")
-						  .reply(message.id)
-						  .send(yield));
-			return outcome::success();
-		}
-
-		const auto &query = args[0];
-
-		namespace bp = boost::process::v2;
+		EKIZU_TRY(auto config,
+				  bot.join_voice_channel(
+					  *message.guild_id, *voice_state->channel_id, yield));
 
 		boost::system::error_code ec;
-		auto exe = bp::environment::find_executable("yt-dlp");
-		if (exe.empty()) {
-			return boost::system::errc::no_such_file_or_directory;
+		boost::asio::stream_file file{yield.get_executor()};
+		if (file.open("Camilo, Christian Nodal - La Mitad [xCDXVoc35Vs].opus",
+					  boost::asio::stream_file::read_only, ec)) {
+			bot.log<ekizu::LogLevel::Error>("Failed to open file");
+			return ec;
 		}
-
-		boost::asio::readable_pipe rp{yield.get_executor()};
-		bp::process proc(
-			yield.get_executor(), exe,
-			{query, "-x", "--audio-format", "opus", "-f", "bestaudio", "-o",
-			 "%(id)s.opus", "-O", "%(id)s.opus", "--no-simulate"},
-			bp::process_stdio{{}, rp, {}});
-		auto code = proc.async_wait(yield[ec]);
-		if (code != 0) { return boost::system::errc::executable_format_error; }
-		if (ec) { return ec; }
-
-		size_t bytes{};
-		std::string song_name(256, '\0');
-
-		while (true) {
-			auto got = rp.async_read_some(
-				boost::asio::buffer(
-					song_name.data() + bytes, song_name.size() - bytes),
-				yield[ec]);
-			bytes += got;
-			if (ec && ec != boost::asio::error::broken_pipe) { return ec; }
-			if (got < song_name.size()) { break; }
-			song_name.resize(song_name.size() * 2);
-		}
-
-		song_name.resize(bytes - 1);
-
-		boost::beast::file file;
-		// TODO: Use boost::asio::stream_file file with uring support for
-		// async I/O.
-
-		file.open(song_name.c_str(), boost::beast::file_mode::read, ec);
-		if (ec) { return ec; }
-
-		auto sz = file.size(ec);
-		if (ec) { return ec; }
 
 		ogg_sync_state oy;
 		ogg_stream_state os;
@@ -112,12 +74,10 @@ struct Play : Command {
 
 		ogg_sync_init(&oy);
 
-		auto *data = ogg_sync_buffer(&oy, sz);
-		// file.async_read_some(boost::asio::buffer(data, sz), yield);
-		file.read(data, sz, ec);
-		if (ec) { return ec; }
+		auto *data = ogg_sync_buffer(&oy, file.size());
+		file.async_read_some(boost::asio::buffer(data, file.size()), yield);
 
-		ogg_sync_wrote(&oy, sz);
+		ogg_sync_wrote(&oy, file.size());
 
 		if (ogg_sync_pageout(&oy, &og) != 1) {
 			return boost::system::errc::io_error;
@@ -147,9 +107,6 @@ struct Play : Command {
 		int time_total{};
 
 		// Start our voice connection.
-		EKIZU_TRY(auto config,
-				  bot.join_voice_channel(
-					  *message.guild_id, *voice_state->channel_id, yield));
 		EKIZU_TRY(auto conn, config->connect(yield));
 		EKIZU_TRY(conn.run(yield));
 		EKIZU_TRY(conn.speak(ekizu::SpeakerFlag::Microphone, yield));
@@ -207,5 +164,5 @@ struct Play : Command {
 	}
 };
 
-COMMAND_ALLOC(Play)
-COMMAND_FREE(Play)
+COMMAND_ALLOC(Song)
+COMMAND_FREE(Song)

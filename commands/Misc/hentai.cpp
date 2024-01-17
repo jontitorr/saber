@@ -8,7 +8,7 @@
 using namespace saber;
 
 struct Hentai : Command {
-	explicit Hentai(Saber *creator)
+	explicit Hentai(Saber &creator)
 		: Command(creator,
 				  CommandOptionsBuilder()
 					  .name("hentai")
@@ -30,7 +30,7 @@ struct Hentai : Command {
 					 const std::vector<std::string> &args,
 					 const boost::asio::yield_context &yield) override {
 		if (args.empty()) {
-			BOOST_OUTCOME_TRY(bot->http()
+			BOOST_OUTCOME_TRY(bot.http()
 								  .create_message(message.channel_id)
 								  .content("Please specify a query.")
 								  .reply(message.id)
@@ -43,7 +43,7 @@ struct Hentai : Command {
 		BOOST_OUTCOME_TRY(
 			const auto sauce, search_hentai_subreddit(query, yield));
 		auto cm =
-			bot->http().create_message(message.channel_id).reply(message.id);
+			bot.http().create_message(message.channel_id).reply(message.id);
 
 		if (sauce.empty()) {
 			cm.content("No results found.");

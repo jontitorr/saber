@@ -4,7 +4,7 @@
 using namespace saber;
 
 struct Join : Command {
-	explicit Join(Saber *creator)
+	explicit Join(Saber &creator)
 		: Command(creator,
 				  CommandOptionsBuilder()
 					  .name("join")
@@ -21,17 +21,17 @@ struct Join : Command {
 					 [[maybe_unused]] const std::vector<std::string> &args,
 					 const boost::asio::yield_context &yield) override {
 		EKIZU_TRY(
-			auto guild, bot->http().get_guild(*message.guild_id).send(yield));
+			auto guild, bot.http().get_guild(*message.guild_id).send(yield));
 
 		auto voice_state =
-			bot->voice_state_cache()
+			bot.voice_state_cache()
 				.get(*message.guild_id)
 				.flat_map([&](auto &users) {
 					return users.get(message.author.id);
 				});
 
 		if (!voice_state) {
-			EKIZU_TRY(bot->http()
+			EKIZU_TRY(bot.http()
 						  .create_message(message.channel_id)
 						  .content("You are not in a voice channel!")
 						  .reply(message.id)
@@ -39,7 +39,7 @@ struct Join : Command {
 			return outcome::success();
 		}
 
-		EKIZU_TRY(bot->join_voice_channel(
+		EKIZU_TRY(bot.join_voice_channel(
 			*message.guild_id, *voice_state->channel_id, yield));
 
 		return outcome::success();

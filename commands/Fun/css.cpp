@@ -4,7 +4,7 @@
 using namespace saber;
 
 struct CSS : Command {
-	explicit CSS(Saber *creator)
+	explicit CSS(Saber &creator)
 		: Command(creator,
 				  CommandOptionsBuilder()
 					  .name("css")
@@ -23,7 +23,7 @@ struct CSS : Command {
 		}
 
 		BOOST_OUTCOME_TRY(
-			bot->http()
+			bot.http()
 				.create_message(message.channel_id)
 				.content("https://media2.giphy.com/media/yYSSBtDgbbRzq/"
 						 "giphy.gif?cid="

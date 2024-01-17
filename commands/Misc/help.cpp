@@ -6,7 +6,7 @@
 using namespace saber;
 
 struct Help : Command {
-	explicit Help(Saber *creator)
+	explicit Help(Saber &creator)
 		: Command(creator,
 				  CommandOptionsBuilder()
 					  .name("help")
@@ -32,7 +32,7 @@ struct Help : Command {
 		// print all command names.
 		std::string names;
 
-		bot->commands().get_commands(
+		bot.commands().get_commands(
 			[&](const std::unordered_map<std::string, std::shared_ptr<Command>>
 					&commands) {
 				for (const auto &command : commands) {
@@ -40,7 +40,7 @@ struct Help : Command {
 				}
 			});
 
-		(void)bot->http()
+		(void)bot.http()
 			.create_message(message.channel_id)
 			.content("Available commands:\n" + names)
 			.send(yield);
@@ -51,12 +51,12 @@ struct Help : Command {
 	Result<> get_command_help(const ekizu::Message &message,
 							  const std::string &command,
 							  const boost::asio::yield_context &yield) {
-		bot->commands().get_commands(
+		bot.commands().get_commands(
 			[&, this](
 				const std::unordered_map<std::string, std::shared_ptr<Command>>
 					&commands) {
 				if (commands.find(command) == commands.end()) {
-					return (void)bot->http()
+					return (void)bot.http()
 						.create_message(message.channel_id)
 						.content("Command not found.")
 						.send(yield);
@@ -72,11 +72,11 @@ struct Help : Command {
 
 				if (!cmd->options.examples.empty()) {
 					std::string examples{};
-					examples.reserve((bot->prefix().length() + 3) *
+					examples.reserve((bot.prefix().length() + 3) *
 									 cmd->options.examples.size());
 					for (const auto &example : cmd->options.examples) {
 						examples +=
-							fmt::format("`{}{}`\n", bot->prefix(), example);
+							fmt::format("`{}{}`\n", bot.prefix(), example);
 					}
 
 					builder.add_field({"❯ Examples", examples});
@@ -84,7 +84,7 @@ struct Help : Command {
 
 				if (!cmd->options.usage.empty()) {
 					builder.add_field(
-						{"❯ Usage", fmt::format("`{}{}`", bot->prefix(),
+						{"❯ Usage", fmt::format("`{}{}`", bot.prefix(),
 												cmd->options.usage)});
 				}
 
@@ -105,11 +105,11 @@ struct Help : Command {
 				builder.add_field(
 					{"❯ Legend", fmt::format("`<> required, [] optional`")});
 				builder.set_footer({fmt::format(
-					"Prefix: {}", bot->prefix().empty()
-									  ? "None"
-									  : fmt::format("`{}`", bot->prefix()))});
+					"Prefix: {}",
+					bot.prefix().empty() ? "None"
+										 : fmt::format("`{}`", bot.prefix()))});
 
-				(void)bot->http()
+				(void)bot.http()
 					.create_message(message.channel_id)
 					.embeds({builder.build()})
 					.send(yield);

@@ -7,7 +7,7 @@
 using namespace saber;
 
 struct Meme : Command {
-	explicit Meme(Saber *creator)
+	explicit Meme(Saber &creator)
 		: Command(creator,
 				  CommandOptionsBuilder()
 					  .name("meme")
@@ -52,7 +52,7 @@ struct Meme : Command {
 				})
 				.build();
 
-		BOOST_OUTCOME_TRY(bot->http()
+		BOOST_OUTCOME_TRY(bot.http()
 							  .create_message(message.channel_id)
 							  .embeds({std::move(embed)})
 							  .send(yield));

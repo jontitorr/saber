@@ -4,7 +4,7 @@
 using namespace saber;
 
 struct Hype : Command {
-	explicit Hype(Saber *creator)
+	explicit Hype(Saber &creator)
 		: Command(creator,
 				  CommandOptionsBuilder()
 					  .name("hype")
@@ -27,7 +27,7 @@ struct Hype : Command {
 			hypu[util::get_random_number<size_t>(0, hypu.size() - 1)];
 		std::string msg = ":train2: CHOO CHOO " + selectedHype;
 
-		BOOST_OUTCOME_TRY(bot->http()
+		BOOST_OUTCOME_TRY(bot.http()
 							  .create_message(message.channel_id)
 							  .content(msg)
 							  .send(yield));
