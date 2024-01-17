@@ -5,26 +5,15 @@ using namespace saber;
 
 struct CSS : Command {
 	explicit CSS(Saber *creator)
-		: Command(
-			  creator,
-			  CommandOptions{
-				  "css",
-				  DIRNAME,
-				  true,
-				  {},
-				  {},
-				  {},
-				  {},
-				  {},
-				  "css",
-				  "",
-				  {ekizu::Permissions::SendMessages,
-				   ekizu::Permissions::EmbedLinks},
-				  {},
-				  {},
-				  {},
-				  0,
-			  }) {}
+		: Command(creator,
+				  CommandOptionsBuilder()
+					  .name("css")
+					  .dirname(DIRNAME)
+					  .enabled(true)
+					  .usage("css")
+					  .bot_permissions({ekizu::Permissions::SendMessages,
+										ekizu::Permissions::EmbedLinks})
+					  .build()) {}
 
 	Result<> execute(const ekizu::Message &message,
 					 const std::vector<std::string> &args,

@@ -5,26 +5,18 @@ using namespace saber;
 
 struct Hype : Command {
 	explicit Hype(Saber *creator)
-		: Command(
-			  creator,
-			  CommandOptions{
-				  "hype",
-				  DIRNAME,
-				  true,
-				  {},
-				  {},
-				  {},
-				  {},
-				  {"hypu", "train"},
-				  "hype",
-				  "",
-				  {ekizu::Permissions::SendMessages,
-				   ekizu::Permissions::EmbedLinks},
-				  {},
-				  {},
-				  {},
-				  0,
-			  }) {}
+		: Command(creator,
+				  CommandOptionsBuilder()
+					  .name("hype")
+					  .dirname(DIRNAME)
+					  .enabled(true)
+					  .aliases({"hypu", "train"})
+					  .usage("hype")
+					  .description("Hype someone.")
+					  .bot_permissions({ekizu::Permissions::SendMessages,
+										ekizu::Permissions::EmbedLinks})
+					  .cooldown(3000)
+					  .build()) {}
 
 	Result<> execute(const ekizu::Message &message,
 					 const std::vector<std::string> &args,

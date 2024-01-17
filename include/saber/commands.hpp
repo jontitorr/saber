@@ -51,7 +51,7 @@ struct CommandLoader {
 struct CommandOptions {
 	std::string name;
 	std::string dirname;
-	bool enabled{true};
+	bool enabled{};
 	bool init{};
 	bool guild_only{};
 	bool slash{};
@@ -64,12 +64,121 @@ struct CommandOptions {
 	std::vector<ekizu::Permissions> bot_permissions;
 	bool nsfw{};
 	bool owner_only{};
-	uint32_t cooldown{3000};
+	uint32_t cooldown{};
 	std::vector<std::string> examples{};
 	std::string subcommands{};
 	bool activity{};
 	bool voice_only{};
 	std::string category{};
+};
+
+struct CommandOptionsBuilder {
+	[[nodiscard]] CommandOptions build() const { return m_options; }
+
+	CommandOptionsBuilder &name(std::string_view name) {
+		m_options.name = std::string{name};
+		return *this;
+	}
+
+	CommandOptionsBuilder &dirname(std::string_view dirname) {
+		m_options.dirname = std::string{dirname};
+		return *this;
+	}
+
+	CommandOptionsBuilder &enabled(bool enabled) {
+		m_options.enabled = enabled;
+		return *this;
+	}
+
+	CommandOptionsBuilder &init(bool init) {
+		m_options.init = init;
+		return *this;
+	}
+
+	CommandOptionsBuilder &guild_only(bool guild_only) {
+		m_options.guild_only = guild_only;
+		return *this;
+	}
+
+	CommandOptionsBuilder &slash(bool slash) {
+		m_options.slash = slash;
+		return *this;
+	}
+
+	CommandOptionsBuilder &user(bool user) {
+		m_options.user = user;
+		return *this;
+	}
+
+	CommandOptionsBuilder &aliases(std::vector<std::string> aliases) {
+		m_options.aliases = std::move(aliases);
+		return *this;
+	}
+
+	CommandOptionsBuilder &usage(std::string_view usage) {
+		m_options.usage = std::string{usage};
+		return *this;
+	}
+
+	CommandOptionsBuilder &description(std::string_view description) {
+		m_options.description = std::string{description};
+		return *this;
+	}
+
+	CommandOptionsBuilder &member_permissions(
+		std::vector<ekizu::Permissions> member_permissions) {
+		m_options.member_permissions = std::move(member_permissions);
+		return *this;
+	}
+
+	CommandOptionsBuilder &bot_permissions(
+		std::vector<ekizu::Permissions> bot_permissions) {
+		m_options.bot_permissions = std::move(bot_permissions);
+		return *this;
+	}
+
+	CommandOptionsBuilder &nsfw(bool nsfw) {
+		m_options.nsfw = nsfw;
+		return *this;
+	}
+
+	CommandOptionsBuilder &owner_only(bool owner_only) {
+		m_options.owner_only = owner_only;
+		return *this;
+	}
+
+	CommandOptionsBuilder &cooldown(uint32_t cooldown) {
+		m_options.cooldown = cooldown;
+		return *this;
+	}
+
+	CommandOptionsBuilder &examples(std::vector<std::string> examples) {
+		m_options.examples = std::move(examples);
+		return *this;
+	}
+
+	CommandOptionsBuilder &subcommands(std::string_view subcommands) {
+		m_options.subcommands = std::string{subcommands};
+		return *this;
+	}
+
+	CommandOptionsBuilder &activity(bool activity) {
+		m_options.activity = activity;
+		return *this;
+	}
+
+	CommandOptionsBuilder &voice_only(bool voice_only) {
+		m_options.voice_only = voice_only;
+		return *this;
+	}
+
+	CommandOptionsBuilder &category(std::string_view category) {
+		m_options.category = std::string{category};
+		return *this;
+	}
+
+   private:
+	CommandOptions m_options;
 };
 
 struct Command {

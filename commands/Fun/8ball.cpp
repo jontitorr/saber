@@ -7,24 +7,17 @@ struct Eightball : Command {
 	explicit Eightball(Saber *creator)
 		: Command(
 			  creator,
-			  CommandOptions{
-				  "8ball",
-				  DIRNAME,
-				  true,
-				  {},
-				  {},
-				  {},
-				  {},
-				  {"eight-ball", "eightball"},
-				  "8ball <question>",
-				  "Asks the Magic 8-Ball for some psychic wisdom.",
-				  {ekizu::Permissions::SendMessages,
-				   ekizu::Permissions::EmbedLinks},
-				  {},
-				  {},
-				  {},
-				  3000,
-			  }) {}
+			  CommandOptionsBuilder()
+				  .name("8ball")
+				  .dirname(DIRNAME)
+				  .enabled(true)
+				  .aliases({"eight-ball", "eightball"})
+				  .usage("8ball <question>")
+				  .description("Asks the Magic 8-Ball for some psychic wisdom.")
+				  .bot_permissions({ekizu::Permissions::SendMessages,
+									ekizu::Permissions::EmbedLinks})
+				  .cooldown(3000)
+				  .build()) {}
 
 	Result<> execute(const ekizu::Message &message,
 					 const std::vector<std::string> &args,

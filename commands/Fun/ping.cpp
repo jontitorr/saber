@@ -5,26 +5,17 @@ using namespace saber;
 
 struct Ping : Command {
 	explicit Ping(Saber *creator)
-		: Command(
-			  creator,
-			  CommandOptions{
-				  "ping",
-				  DIRNAME,
-				  true,
-				  {},
-				  {},
-				  {},
-				  {},
-				  {},
-				  "ping",
-				  "Replies with pong.",
-				  {ekizu::Permissions::SendMessages,
-				   ekizu::Permissions::EmbedLinks},
-				  {},
-				  {},
-				  {},
-				  3000,
-			  }) {}
+		: Command(creator,
+				  CommandOptionsBuilder()
+					  .name("ping")
+					  .dirname(DIRNAME)
+					  .enabled(true)
+					  .usage("ping")
+					  .description("Replies with pong.")
+					  .bot_permissions({ekizu::Permissions::SendMessages,
+										ekizu::Permissions::EmbedLinks})
+					  .cooldown(3000)
+					  .build()) {}
 
 	Result<> execute(const ekizu::Message &message,
 					 [[maybe_unused]] const std::vector<std::string> &args,

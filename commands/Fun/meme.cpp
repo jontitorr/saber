@@ -8,27 +8,18 @@ using namespace saber;
 
 struct Meme : Command {
 	explicit Meme(Saber *creator)
-		: Command(
-			  creator,
-			  CommandOptions{
-				  "meme",
-				  DIRNAME,
-				  true,
-				  {},
-				  {},
-				  {},
-				  {},
-				  {},
-				  "meme",
-				  "Displays a random meme from the `memes`, `dankmemes`, or "
-				  "`me_irl` subreddits.",
-				  {ekizu::Permissions::SendMessages,
-				   ekizu::Permissions::EmbedLinks},
-				  {},
-				  {},
-				  {},
-				  0,
-			  }) {}
+		: Command(creator,
+				  CommandOptionsBuilder()
+					  .name("meme")
+					  .dirname(DIRNAME)
+					  .enabled(true)
+					  .usage("meme")
+					  .description("Displays a random meme from the `memes`, "
+								   "`dankmemes`, or `me_irl` subreddits.")
+					  .bot_permissions({ekizu::Permissions::SendMessages,
+										ekizu::Permissions::EmbedLinks})
+					  .cooldown(3000)
+					  .build()) {}
 
 	Result<> execute(const ekizu::Message &message,
 					 [[maybe_unused]] const std::vector<std::string> &args,

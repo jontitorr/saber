@@ -5,26 +5,17 @@ using namespace saber;
 
 struct Join : Command {
 	explicit Join(Saber *creator)
-		: Command(
-			  creator,
-			  CommandOptions{
-				  "join",
-				  DIRNAME,
-				  true,
-				  {},
-				  {},
-				  {},
-				  {},
-				  {},
-				  "join",
-				  "Joins the voice channel.",
-				  {ekizu::Permissions::SendMessages,
-				   ekizu::Permissions::EmbedLinks},
-				  {},
-				  {},
-				  {},
-				  3000,
-			  }) {}
+		: Command(creator,
+				  CommandOptionsBuilder()
+					  .name("join")
+					  .dirname(DIRNAME)
+					  .enabled(true)
+					  .usage("join")
+					  .description("Joins the voice channel.")
+					  .bot_permissions({ekizu::Permissions::SendMessages,
+										ekizu::Permissions::EmbedLinks})
+					  .cooldown(3000)
+					  .build()) {}
 
 	Result<> execute(const ekizu::Message &message,
 					 [[maybe_unused]] const std::vector<std::string> &args,

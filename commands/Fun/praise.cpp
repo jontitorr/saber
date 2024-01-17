@@ -5,26 +5,15 @@ using namespace saber;
 
 struct Praise : Command {
 	explicit Praise(Saber *creator)
-		: Command(
-			  creator,
-			  CommandOptions{
-				  "praise",
-				  DIRNAME,
-				  true,
-				  {},
-				  {},
-				  {},
-				  {},
-				  {},
-				  "praise",
-				  "",
-				  {ekizu::Permissions::SendMessages,
-				   ekizu::Permissions::EmbedLinks},
-				  {},
-				  {},
-				  {},
-				  0,
-			  }) {}
+		: Command(creator,
+				  CommandOptionsBuilder()
+					  .name("praise")
+					  .dirname(DIRNAME)
+					  .enabled(true)
+					  .usage("praise")
+					  .bot_permissions({ekizu::Permissions::SendMessages,
+										ekizu::Permissions::EmbedLinks})
+					  .build()) {}
 
 	Result<> execute(const ekizu::Message &message,
 					 const std::vector<std::string> &args,

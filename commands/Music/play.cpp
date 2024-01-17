@@ -6,32 +6,26 @@
 #include <saber/saber.hpp>
 #include <saber/util.hpp>
 
+#include "saber/commands.hpp"
+
 static constexpr uint32_t SAMPLE_RATE{48'000};
 
 using namespace saber;
 
 struct Play : Command {
 	explicit Play(Saber *creator)
-		: Command(
-			  creator,
-			  CommandOptions{
-				  "play",
-				  DIRNAME,
-				  true,
-				  {},
-				  {},
-				  {},
-				  {},
-				  {},
-				  "play <query>",
-				  "Play a youtube video in the voice channel.",
-				  {ekizu::Permissions::SendMessages,
-				   ekizu::Permissions::EmbedLinks},
-				  {},
-				  {},
-				  {},
-				  3000,
-			  }) {}
+		: Command(creator,
+				  CommandOptionsBuilder()
+					  .name("play")
+					  .dirname(DIRNAME)
+					  .enabled(true)
+					  .guild_only(true)
+					  .usage("play <query>")
+					  .description("Play a youtube video in the voice channel.")
+					  .bot_permissions({ekizu::Permissions::SendMessages,
+										ekizu::Permissions::EmbedLinks})
+					  .cooldown(3000)
+					  .build()) {}
 
 	Result<> execute(const ekizu::Message &message,
 					 [[maybe_unused]] const std::vector<std::string> &args,

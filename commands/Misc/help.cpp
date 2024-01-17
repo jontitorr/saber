@@ -7,25 +7,17 @@ using namespace saber;
 
 struct Help : Command {
 	explicit Help(Saber *creator)
-		: Command(
-			  creator,
-			  CommandOptions{
-				  "help",
-				  DIRNAME,
-				  true,
-				  {},
-				  {},
-				  {},
-				  {},
-				  {},
-				  "help",
-				  "",
-				  {ekizu::Permissions::SendMessages,
-				   ekizu::Permissions::EmbedLinks},
-				  {},
-				  {},
-				  {},
-				  3000}) {}
+		: Command(creator,
+				  CommandOptionsBuilder()
+					  .name("help")
+					  .dirname(DIRNAME)
+					  .enabled(true)
+					  .init(true)
+					  .usage("help")
+					  .bot_permissions({ekizu::Permissions::SendMessages,
+										ekizu::Permissions::EmbedLinks})
+					  .cooldown(2000)
+					  .build()) {}
 
 	Result<> execute(const ekizu::Message &message,
 					 const std::vector<std::string> &args,

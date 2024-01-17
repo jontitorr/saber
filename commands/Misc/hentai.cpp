@@ -9,26 +9,16 @@ using namespace saber;
 
 struct Hentai : Command {
 	explicit Hentai(Saber *creator)
-		: Command(
-			  creator,
-			  CommandOptions{
-				  "hentai",
-				  DIRNAME,
-				  true,
-				  true,
-				  false,
-				  {},
-				  {},
-				  {},
-				  "hentai",
-				  "Fetches the sauce.",
-				  {ekizu::Permissions::SendMessages,
-				   ekizu::Permissions::EmbedLinks},
-				  {},
-				  {},
-				  {},
-				  2000,
-			  }),
+		: Command(creator,
+				  CommandOptionsBuilder()
+					  .name("hentai")
+					  .dirname(DIRNAME)
+					  .enabled(true)
+					  .init(true)
+					  .bot_permissions({ekizu::Permissions::SendMessages,
+										ekizu::Permissions::EmbedLinks})
+					  .cooldown(2000)
+					  .build()),
 		  m_reddit{RedditOptions{
 			  std::getenv("SABER_REDDIT_USERNAME"),
 			  std::getenv("SABER_REDDIT_PASSWORD"),

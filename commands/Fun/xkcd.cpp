@@ -6,26 +6,15 @@ using namespace saber;
 
 struct XKCD : Command {
 	explicit XKCD(Saber *creator)
-		: Command(
-			  creator,
-			  CommandOptions{
-				  "xkcd",
-				  DIRNAME,
-				  true,
-				  {},
-				  {},
-				  {},
-				  {},
-				  {},
-				  "xkcd",
-				  "",
-				  {ekizu::Permissions::SendMessages,
-				   ekizu::Permissions::EmbedLinks},
-				  {},
-				  {},
-				  {},
-				  0,
-			  }) {}
+		: Command(creator,
+				  CommandOptionsBuilder()
+					  .name("xkcd")
+					  .dirname(DIRNAME)
+					  .enabled(true)
+					  .usage("xkcd")
+					  .bot_permissions({ekizu::Permissions::SendMessages,
+										ekizu::Permissions::EmbedLinks})
+					  .build()) {}
 
 	Result<> execute(const ekizu::Message &message,
 					 const std::vector<std::string> &args,

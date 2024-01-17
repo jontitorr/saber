@@ -6,26 +6,18 @@ using namespace saber;
 
 struct About : Command {
 	explicit About(Saber *creator)
-		: Command(
-			  creator,
-			  CommandOptions{
-				  "about",
-				  DIRNAME,
-				  true,
-				  true,
-				  false,
-				  {},
-				  {},
-				  {},
-				  "about",
-				  "Info about me.",
-				  {ekizu::Permissions::SendMessages,
-				   ekizu::Permissions::EmbedLinks},
-				  {},
-				  {},
-				  {},
-				  2000,
-			  }) {}
+		: Command(creator,
+				  CommandOptionsBuilder()
+					  .name("about")
+					  .dirname(DIRNAME)
+					  .enabled(true)
+					  .init(true)
+					  .usage("about")
+					  .description("Info about me.")
+					  .bot_permissions({ekizu::Permissions::SendMessages,
+										ekizu::Permissions::EmbedLinks})
+					  .cooldown(2000)
+					  .build()) {}
 
 	Result<> setup(const boost::asio::yield_context &yield) override {
 		bot->log<ekizu::LogLevel::Info>("Setting up About command");

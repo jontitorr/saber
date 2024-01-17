@@ -110,12 +110,21 @@ void CommandLoader::process_commands(const ekizu::Message &message,
 
 	if (command_map.find(command_name) == command_map.end()) { return; }
 
+	auto cmd = command_map.at(command_name);
+
+	if (cmd->options.guild_only && !message.guild_id) {
+		return (void)m_parent->http()
+			.create_message(message.channel_id)
+			.content("This command can only be used in guilds.")
+			.reply(message.id)
+			.send(yield);
+	}
+
 	// NOTE: I'm seeing a case in which the commands will need the lock so it
 	// should be unlocked here. i.e. an unload command or something.
 	lk.unlock();
 
-	if (auto res = command_map.at(command_name)->execute(message, args, yield);
-		!res) {
+	if (auto res = cmd->execute(message, args, yield); !res) {
 		m_parent->log<ekizu::LogLevel::Error>(
 			"Failed to execute command {}: {}", command_name,
 			res.error().message());
