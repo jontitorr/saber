@@ -3,9 +3,23 @@
 #include <ekizu/embed_builder.hpp>
 #include <saber/saber.hpp>
 #include <saber/util.hpp>
-#include <unordered_set>
 
 using namespace saber;
+
+// clang-format off
+boost::unordered_flat_map<std::string_view, std::string_view> CATEGORY_EMOJIS{
+    {"Music", "🎵",},
+    {"Fun",  "🎉",},
+    {"Hentai", "🔞",},
+    {"Moderation", "🛠️",},
+    {"Owner", "👑",},
+    {"Templates",  "📷",},
+    {"Steam", "🚂",},
+    {"Guild", "🏠",},
+    {"Misc", "❓",},
+    {"Activity", "👷"}
+};
+// clang-format on
 
 struct Help : Command {
 	explicit Help(Saber &creator)
@@ -32,21 +46,113 @@ struct Help : Command {
 
 	Result<> get_help(const ekizu::Message &message,
 					  const boost::asio::yield_context &yield) {
-		// print all command names.
-		std::string names;
+		boost::unordered_flat_map<std::string,
+								  std::vector<std::shared_ptr<Command>>>
+			categories;
 
 		bot.commands().get_commands(
 			[&](const boost::unordered_flat_map<
 				std::string, std::shared_ptr<Command>> &commands) {
-				for (const auto &command : commands) {
-					names += command.first + "\n";
+				for (const auto &[_, command] : commands) {
+					categories[command->options.category].push_back(command);
 				}
 			});
 
+		std::vector<ekizu::SelectOptions> opts;
+
+		for (const auto &[category, _] : categories) {
+			opts.emplace_back(
+				ekizu::SelectOptionsBuilder()
+					.label(category)
+					.value(category)
+					.description(
+						fmt::format("Commands from the {} category.", category))
+					.emoji(ekizu::PartialEmoji{
+						{}, std::string{CATEGORY_EMOJIS.at(category)}, {}})
+					.build());
+		}
+
+		SABER_TRY(
+			auto msg,
+			bot.http()
+				.create_message(message.channel_id)
+				.components(
+					{ekizu::ActionRowBuilder()
+						 .components(
+							 {ekizu::SelectMenuBuilder()
+								  .custom_id("help_menu")
+								  .placeholder("Please select a category.")
+								  .options(std::move(opts))
+								  .build()})
+						 .build()})
+				.embeds({ekizu::EmbedBuilder()
+							 .set_description("Please choose a category.")
+							 .build()})
+				.reply(message.id)
+				.send(yield));
+
+		auto filter = [author_id = message.author.id](
+						  const ekizu::Interaction &interaction,
+						  const ekizu::MessageComponentData &data) {
+			std::optional<ekizu::Snowflake> id;
+
+			if (interaction.member) {
+				id = interaction.member->user.id;
+			} else if (interaction.user) {
+				id = interaction.user->id;
+			}
+
+			return data.custom_id == "help_menu" && id == author_id;
+		};
+
+		auto &collector = bot.create_message_component_collector(
+			message.channel_id, filter, ekizu::ComponentType::SelectMenu,
+			std::chrono::seconds(30), yield);
+
+		while (true) {
+			auto res = collector.async_receive(yield);
+			if (!res) { break; }
+
+			auto [i, data] = res.value();
+
+			const auto &values = data->values;
+			if (values.empty()) { continue; }
+
+			const auto &category = values[0];
+
+			auto builder =
+				ekizu::EmbedBuilder()
+					.set_title(fmt::format("{} commands", category))
+					.set_description("Here are the commands you can use");
+
+			for (const auto &command : categories.at(category)) {
+				builder.add_field(ekizu::EmbedField{
+					command->options.name,
+					command->options.description,
+					true,
+				});
+			}
+
+			SABER_TRY(
+				bot.http()
+					.interaction(i->application_id)
+					.create_response(
+						i->id, i->token,
+						ekizu::InteractionResponseBuilder()
+							.embeds({builder.build()})
+							.type(ekizu::InteractionResponseType::UpdateMessage)
+							.build())
+					.send(yield))
+		}
+
+		auto &action_row = std::get<ekizu::ActionRow>(msg.components[0]);
+		auto &select_menu =
+			std::get<ekizu::SelectMenu>(action_row.components[0]);
+		select_menu.disabled = true;
+
 		SABER_TRY(bot.http()
-					  .create_message(message.channel_id)
-					  .content("Available commands:\n" + names)
-					  .reply(message.id)
+					  .edit_message(msg.channel_id, msg.id)
+					  .components(std::move(msg.components))
 					  .send(yield));
 
 		return ekizu::outcome::success();

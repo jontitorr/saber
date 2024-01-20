@@ -116,6 +116,18 @@ SABER_EXPORT Result<> Saber::leave_voice_channel(
 	return m_shard.leave_voice_channel(guild_id, yield);
 }
 
+SABER_EXPORT ComponentCollector &Saber::create_message_component_collector(
+	ekizu::Snowflake channel_id,
+	std::function<bool(const ekizu::Interaction &,
+					   const ekizu::MessageComponentData &)>
+		filter,
+	ekizu::ComponentType component_type,
+	std::chrono::steady_clock::duration expiry,
+	const boost::asio::yield_context &yield) {
+	return m_collectors[channel_id].emplace_back(
+		component_type, expiry, std::move(filter), yield);
+}
+
 void Saber::run(const boost::asio::yield_context &yield) {
 	m_commands.load_all(yield);
 
@@ -164,6 +176,12 @@ void Saber::handle_event(ekizu::Event ev,
 
 				if (!m_voice_state_cache.has(g.guild.id)) {
 					m_voice_state_cache.put(g.guild.id, std::move(lru));
+				}
+			},
+			[this, &yield](const ekizu::InteractionCreate &i) {
+				for (auto &collector :
+					 m_collectors[*i.interaction.channel_id]) {
+					collector.async_send(i.interaction, yield);
 				}
 			},
 			[this](const ekizu::VoiceStateUpdate &v) {

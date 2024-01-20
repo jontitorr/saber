@@ -14,6 +14,8 @@
 #include <saber/config.hpp>
 #include <saber/reddit.hpp>
 
+#include "saber/component_collector.hpp"
+
 namespace saber {
 struct Saber {
 	SABER_EXPORT explicit Saber(Config config);
@@ -57,6 +59,14 @@ struct Saber {
 		const boost::asio::yield_context &yield);
 	SABER_EXPORT Result<> leave_voice_channel(
 		ekizu::Snowflake guild_id, const boost::asio::yield_context &yield);
+	SABER_EXPORT ComponentCollector &create_message_component_collector(
+		ekizu::Snowflake channel_id,
+		std::function<bool(const ekizu::Interaction &,
+						   const ekizu::MessageComponentData &)>
+			filter,
+		ekizu::ComponentType component_type,
+		std::chrono::steady_clock::duration expiry,
+		const boost::asio::yield_context &yield);
 
 	SABER_EXPORT void run(const boost::asio::yield_context &yield);
 
@@ -102,6 +112,8 @@ struct Saber {
 	ekizu::SnowflakeLruCache<ekizu::SnowflakeLruCache<ekizu::VoiceState>>
 		m_voice_state_cache{500};
 	Config m_config;
+	boost::unordered_flat_map<ekizu::Snowflake, std::vector<ComponentCollector>>
+		m_collectors;
 };
 }  // namespace saber
 
