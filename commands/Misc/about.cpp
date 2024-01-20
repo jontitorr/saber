@@ -36,9 +36,9 @@ struct About : Command {
 
 		about_embed =
 			ekizu::EmbedBuilder{}
-				.set_title(fmt::format("🔥About :: Yamato | ID :: {}", user.id))
+				.set_title(fmt::format("🔥About :: Saber | ID :: {}", user.id))
 				.set_description(
-					"Yamato is a simple bot that was built for "
+					"Saber is a simple bot that was built for "
 					"my "
 					"personal Discord server. From providing "
 					"7DS "
@@ -52,7 +52,7 @@ struct About : Command {
 					"hope you enjoy your stay 💖.")
 				.set_thumbnail({user.display_avatar_url()})
 				.add_fields({
-					{"Info\nOwner", fmt::format("{}", bot.owner_id()), true},
+					{"Info\nOwner", fmt::format("<@{}>", bot.owner_id()), true},
 				})
 				.set_footer({fmt::format("Made by {}", owner.username),
 							 owner.display_avatar_url()})
