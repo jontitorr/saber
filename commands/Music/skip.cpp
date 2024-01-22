@@ -2,16 +2,16 @@
 
 using namespace saber;
 
-struct Join : Command {
-	explicit Join(Saber &creator)
+struct Skip : Command {
+	explicit Skip(Saber &creator)
 		: Command(creator,
 				  CommandOptionsBuilder()
-					  .name("join")
+					  .name("skip")
 					  .category(DIRNAME)
 					  .enabled(true)
 					  .guild_only(true)
-					  .usage("join")
-					  .description("Joins the voice channel.")
+					  .usage("skip")
+					  .description("Skips the current song.")
 					  .bot_permissions({ekizu::Permissions::SendMessages,
 										ekizu::Permissions::EmbedLinks})
 					  .cooldown(std::chrono::seconds(3))
@@ -39,21 +39,11 @@ struct Join : Command {
 			return outcome::success();
 		}
 
-		SABER_TRY(auto just_connected,
-				  bot.player().connect(
-					  *message.guild_id, *voice_state->channel_id, yield));
-
-		if (!just_connected) {
-			SABER_TRY(bot.http()
-						  .create_message(message.channel_id)
-						  .content("I am already in a voice channel!")
-						  .reply(message.id)
-						  .send(yield));
-		}
-
-		return outcome::success();
+		SABER_TRY(bot.player().connect(
+			*message.guild_id, *voice_state->channel_id, yield));
+		return bot.player().skip(*message.guild_id);
 	}
 };
 
-COMMAND_ALLOC(Join)
-COMMAND_FREE(Join)
+COMMAND_ALLOC(Skip)
+COMMAND_FREE(Skip)

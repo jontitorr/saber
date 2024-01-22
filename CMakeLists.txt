@@ -37,7 +37,9 @@ set(TRY_BOOST_VERSION "1.81.0")
 set(BOOST_NOT_HEADER_ONLY_COMPONENTS_THAT_YOU_NEED
     "coroutine;filesystem;thread;url"
 )
-set(BOOST_HEADER_ONLY_COMPONENTS_THAT_YOU_NEED "asio;beast;process;outcome")
+set(BOOST_HEADER_ONLY_COMPONENTS_THAT_YOU_NEED
+    "asio;beast;process;scope_exit;outcome"
+)
 
 set(IS_BOOST_LOCAL OFF)
 if(${CPM_LOCAL_PACKAGES_ONLY})
@@ -144,7 +146,7 @@ target_link_libraries(
 )
 
 if(NOT ${IS_BOOST_LOCAL})
-    target_link_libraries(saber_lib PUBLIC Boost::process)
+    target_link_libraries(saber_lib PUBLIC Boost::process Boost::scope_exit)
 endif()
 
 # EXE

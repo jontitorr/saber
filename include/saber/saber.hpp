@@ -11,10 +11,10 @@
 #include <ekizu/voice_connection.hpp>
 #include <ekizu/voice_state.hpp>
 #include <saber/commands.hpp>
+#include <saber/component_collector.hpp>
 #include <saber/config.hpp>
+#include <saber/player.hpp>
 #include <saber/reddit.hpp>
-
-#include "saber/component_collector.hpp"
 
 namespace saber {
 struct Saber {
@@ -47,6 +47,7 @@ struct Saber {
 		return m_voice_state_cache;
 	}
 	[[nodiscard]] const Config &config() const { return m_config; }
+	[[nodiscard]] Player &player() { return m_player; }
 	[[nodiscard]] ekizu::Snowflake owner_id() const {
 		return config().owner_id;
 	}
@@ -114,6 +115,7 @@ struct Saber {
 	Config m_config;
 	boost::unordered_flat_map<ekizu::Snowflake, std::vector<ComponentCollector>>
 		m_collectors;
+	Player m_player;
 };
 }  // namespace saber
 

@@ -2,7 +2,7 @@
 
 #include <boost/beast/core/detail/base64.hpp>
 #include <boost/url/encode.hpp>
-#include <boost/url/grammar/alnum_chars.hpp>
+#include <boost/url/rfc/unreserved_chars.hpp>
 #include <ekizu/json_util.hpp>
 #include <saber/reddit.hpp>
 
@@ -11,8 +11,8 @@ constexpr const char* API_HOST = "oauth.reddit.com";
 constexpr const char* ACCESS_TOKEN_PATH = "/api/v1/access_token";
 
 std::string base64_encode(std::string_view str) {
-	std::string ret;
-	ret.resize(boost::beast::detail::base64::encoded_size(str.size()));
+	std::string ret(
+		boost::beast::detail::base64::encoded_size(str.size()), '\0');
 	boost::beast::detail::base64::encode(ret.data(), str.data(), str.size());
 	return ret;
 }
@@ -26,7 +26,7 @@ std::string to_query_string(const saber::RedditFields& fields) {
 				query_elements.push_back(fmt::format(
 					"{}={}", key,
 					boost::urls::encode(fmt::to_string(opt_value.value()),
-										boost::urls::grammar::alnum_chars)));
+										boost::urls::unreserved_chars)));
 			}
 		};
 

@@ -2,16 +2,16 @@
 
 using namespace saber;
 
-struct Join : Command {
-	explicit Join(Saber &creator)
+struct Previous : Command {
+	explicit Previous(Saber &creator)
 		: Command(creator,
 				  CommandOptionsBuilder()
-					  .name("join")
+					  .name("previous")
 					  .category(DIRNAME)
 					  .enabled(true)
 					  .guild_only(true)
-					  .usage("join")
-					  .description("Joins the voice channel.")
+					  .usage("previous")
+					  .description("Go to the previous song.")
 					  .bot_permissions({ekizu::Permissions::SendMessages,
 										ekizu::Permissions::EmbedLinks})
 					  .cooldown(std::chrono::seconds(3))
@@ -39,21 +39,11 @@ struct Join : Command {
 			return outcome::success();
 		}
 
-		SABER_TRY(auto just_connected,
-				  bot.player().connect(
-					  *message.guild_id, *voice_state->channel_id, yield));
-
-		if (!just_connected) {
-			SABER_TRY(bot.http()
-						  .create_message(message.channel_id)
-						  .content("I am already in a voice channel!")
-						  .reply(message.id)
-						  .send(yield));
-		}
-
-		return outcome::success();
+		SABER_TRY(bot.player().connect(
+			*message.guild_id, *voice_state->channel_id, yield));
+		return bot.player().previous(*message.guild_id);
 	}
 };
 
-COMMAND_ALLOC(Join)
-COMMAND_FREE(Join)
+COMMAND_ALLOC(Previous)
+COMMAND_FREE(Previous)

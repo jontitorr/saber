@@ -20,7 +20,11 @@ Saber::Saber(Config config)
 	: m_commands{*this},
 	  m_http{config.token},
 	  m_shard{ekizu::ShardId::ONE, config.token, ekizu::Intents::AllIntents},
-	  m_config{std::move(config)} {
+	  m_config{std::move(config)},
+	  m_player{[this](ekizu::Snowflake guild_id, ekizu::Snowflake channel_id,
+					  const boost::asio::yield_context &yield) {
+		  return join_voice_channel(guild_id, channel_id, yield);
+	  }} {
 	auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
 	console_sink->set_pattern("%^%Y-%m-%d %H:%M:%S.%e [%L] [th#%t]%$ : %v");
 
@@ -74,7 +78,7 @@ Saber::Saber(Config config)
 	m_logger->set_level(level);
 }
 
-SABER_EXPORT Result<ekizu::Permissions> Saber::get_guild_permissions(
+Result<ekizu::Permissions> Saber::get_guild_permissions(
 	ekizu::Snowflake guild_id, ekizu::Snowflake user_id) {
 	ekizu::Permissions ret{};
 	auto guild = m_guild_cache[guild_id];
@@ -99,7 +103,7 @@ SABER_EXPORT Result<ekizu::Permissions> Saber::get_guild_permissions(
 	return ret;
 }
 
-SABER_EXPORT Result<ekizu::VoiceConnectionConfig *> Saber::join_voice_channel(
+Result<ekizu::VoiceConnectionConfig *> Saber::join_voice_channel(
 	ekizu::Snowflake guild_id, ekizu::Snowflake channel_id,
 	const boost::asio::yield_context &yield) {
 	m_voice_ready_channels.emplace(guild_id, yield.get_executor());
@@ -111,12 +115,12 @@ SABER_EXPORT Result<ekizu::VoiceConnectionConfig *> Saber::join_voice_channel(
 	return &m_voice_configs[guild_id];
 }
 
-SABER_EXPORT Result<> Saber::leave_voice_channel(
-	ekizu::Snowflake guild_id, const boost::asio::yield_context &yield) {
+Result<> Saber::leave_voice_channel(ekizu::Snowflake guild_id,
+									const boost::asio::yield_context &yield) {
 	return m_shard.leave_voice_channel(guild_id, yield);
 }
 
-SABER_EXPORT ComponentCollector &Saber::create_message_component_collector(
+ComponentCollector &Saber::create_message_component_collector(
 	ekizu::Snowflake channel_id,
 	std::function<bool(const ekizu::Interaction &,
 					   const ekizu::MessageComponentData &)>

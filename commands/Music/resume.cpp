@@ -2,16 +2,16 @@
 
 using namespace saber;
 
-struct Join : Command {
-	explicit Join(Saber &creator)
+struct Resume : Command {
+	explicit Resume(Saber &creator)
 		: Command(creator,
 				  CommandOptionsBuilder()
-					  .name("join")
+					  .name("resume")
 					  .category(DIRNAME)
 					  .enabled(true)
 					  .guild_only(true)
-					  .usage("join")
-					  .description("Joins the voice channel.")
+					  .usage("resume")
+					  .description("Resumes the player.")
 					  .bot_permissions({ekizu::Permissions::SendMessages,
 										ekizu::Permissions::EmbedLinks})
 					  .cooldown(std::chrono::seconds(3))
@@ -39,21 +39,15 @@ struct Join : Command {
 			return outcome::success();
 		}
 
-		SABER_TRY(auto just_connected,
-				  bot.player().connect(
-					  *message.guild_id, *voice_state->channel_id, yield));
-
-		if (!just_connected) {
-			SABER_TRY(bot.http()
-						  .create_message(message.channel_id)
-						  .content("I am already in a voice channel!")
-						  .reply(message.id)
-						  .send(yield));
-		}
-
+		SABER_TRY(bot.player().connect(
+			*message.guild_id, *voice_state->channel_id, yield));
+		SABER_TRY(bot.player().resume(*message.guild_id));
+		SABER_TRY(bot.http()
+					  .create_reaction(message.channel_id, message.id, "▶")
+					  .send(yield));
 		return outcome::success();
 	}
 };
 
-COMMAND_ALLOC(Join)
-COMMAND_FREE(Join)
+COMMAND_ALLOC(Resume)
+COMMAND_FREE(Resume)
