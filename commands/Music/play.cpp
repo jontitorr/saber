@@ -1,6 +1,6 @@
 #include <boost/algorithm/string/join.hpp>
 #include <ekizu/embed_builder.hpp>
-#include <saber/saber.hpp>
+#include <saber/util.hpp>
 
 using namespace saber;
 
@@ -22,22 +22,8 @@ struct Play : Command {
 	Result<> execute(const ekizu::Message &message,
 					 [[maybe_unused]] const std::vector<std::string> &args,
 					 const boost::asio::yield_context &yield) override {
-		auto voice_state =
-			bot.voice_states()
-				.get(*message.guild_id)
-				.flat_map([&](auto &users) {
-					return users.get(message.author.id);
-				});
-
-		if (!voice_state) {
-			SABER_TRY(bot.http()
-						  .create_message(message.channel_id)
-						  .content("You are not in a voice channel!")
-						  .reply(message.id)
-						  .send(yield));
-			return outcome::success();
-		}
-
+		SABER_TRY(
+			auto voice_state, util::in_voice_channel(bot, message, yield));
 		if (args.empty()) {
 			SABER_TRY(bot.http()
 						  .create_message(message.channel_id)

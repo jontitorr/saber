@@ -78,6 +78,18 @@ Saber::Saber(Config config)
 	m_logger->set_level(level);
 }
 
+Result<boost::optional<ekizu::Guild &>> Saber::get_guild(
+	ekizu::Snowflake guild_id, const boost::asio::yield_context &yield) {
+	if (m_guild_cache.has(guild_id)) {
+		return outcome::success(m_guild_cache[guild_id]);
+	}
+
+	SABER_TRY(auto guild, m_http.get_guild(guild_id).send(yield));
+	m_guild_cache.put(guild_id, std::move(guild));
+	log<ekizu::LogLevel::Info>("Fetched and cached guild: {}", guild_id);
+	return outcome::success(m_guild_cache[guild_id]);
+}
+
 Result<ekizu::Permissions> Saber::get_guild_permissions(
 	ekizu::Snowflake guild_id, ekizu::Snowflake user_id) {
 	ekizu::Permissions ret{};
@@ -220,7 +232,7 @@ void Saber::handle_event(ekizu::Event ev,
 
 				if (const auto res =
 						m_commands.process_commands(m.message, yield);
-					!res) {
+					!res && res.error().failed()) {
 					log<ekizu::LogLevel::Warn>(
 						"Failed to process command: {}", res.error().message());
 				};

@@ -53,6 +53,8 @@ struct Saber {
 	}
 	[[nodiscard]] std::string_view prefix() const { return config().prefix; }
 
+	SABER_EXPORT Result<boost::optional<ekizu::Guild &>> get_guild(
+		ekizu::Snowflake guild_id, const boost::asio::yield_context &yield);
 	SABER_EXPORT Result<ekizu::Permissions> get_guild_permissions(
 		ekizu::Snowflake guild_id, ekizu::Snowflake user_id);
 	SABER_EXPORT Result<ekizu::VoiceConnectionConfig *> join_voice_channel(
