@@ -23,7 +23,9 @@ on:
 env:
   BRANCH_NAME: ${{ github.ref == 'refs/heads/dev' && 'dev' || 'main' }}
   PRERELEASE: ${{ github.ref == 'refs/heads/dev' && 'true' || 'false' }}
-  TAG_SUFFIX: ${{ github.ref == 'refs/heads/dev' && '-dev' || '' }}
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -118,38 +120,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Get Latest Tag
-        id: latest-tag
-        run: |
-          if [[ "${{ github.ref }}" == 'refs/heads/dev' ]]; then
-            latest_tag=$(git tag -l | grep "\-dev" | sort -V | tail -n 1 || true)
-          else
-            latest_tag=$(git tag -l | grep -v "\-dev" | sort -V | tail -n 1 || true)
-          fi
-
-          if [[ -z $latest_tag ]]; then
-            latest_tag=""
-          fi
-
-          echo "::set-output name=tag::$latest_tag"
-        shell: bash
-
       - name: Get Next Version
         id: semver
         uses: ietf-tools/semver-action@v1
         with:
           token: ${{ github.token }}
           branch: ${{ env.BRANCH_NAME }}
-          fromTag: ${{ steps.latest-tag.outputs.tag }}
 
       - name: Create Draft Release
         uses: ncipollo/release-action@v1.12.0
         with:
-          prerelease: ${{ env.PRERELEASE }}
+          prerelease: true
           draft: false
           commit: ${{ github.sha }}
-          tag: ${{ steps.semver.outputs.next }}${{ env.TAG_SUFFIX }}
-          name: ${{ steps.semver.outputs.next }}${{ env.TAG_SUFFIX }}
+          tag: ${{ steps.semver.outputs.next }}
+          name: ${{ steps.semver.outputs.next }}
           body: "*pending*"
           token: ${{ github.token }}
 
@@ -158,8 +143,7 @@ jobs:
         uses: requarks/changelog-action@v1
         with:
           token: ${{ github.token }}
-          fromTag: ${{ steps.semver.outputs.next }}${{ env.TAG_SUFFIX }}
-          toTag: ${{ steps.semver.outputs.current }}${{ env.TAG_SUFFIX }}
+          tag: ${{ steps.semver.outputs.next }}
           writeToFile: false
 
       - name: Create Release
@@ -170,8 +154,8 @@ jobs:
           draft: false
           makeLatest: true
           commit: ${{ github.sha }}
-          tag: ${{ steps.semver.outputs.next }}${{ env.TAG_SUFFIX }}
-          name: ${{ steps.semver.outputs.next }}${{ env.TAG_SUFFIX }}
+          tag: ${{ steps.semver.outputs.next }}
+          name: ${{ steps.semver.outputs.next }}
           body: ${{ steps.changelog.outputs.changes }}
           token: ${{ github.token }}
 
@@ -195,4 +179,4 @@ jobs:
           repo_token: ${{ github.token }}
           file_glob: true
           file: "**/*"
-          tag: ${{ needs.release.outputs.next }}${{ env.TAG_SUFFIX }}
+          tag: ${{ needs.release.outputs.next }}
