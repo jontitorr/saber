@@ -13,6 +13,26 @@ namespace asio = boost::asio;
 }  // namespace
 
 namespace saber {
+Track GuildQueue::add_track(Track track) {
+	track.id = last_track_id++;
+	if (!current_track_id) { current_track_id = track.id; }
+	return track;
+}
+
+std::optional<uint64_t> GuildQueue::skip(uint64_t track_id) {
+	// Check if we're playing and we're not the last track.
+	if (!current_track_id || current_track_id == last_track_id) {
+		return std::nullopt;
+	}
+
+	auto ret = *current_track_id;
+
+	// Check if track_id is within our bounds. Going backwards is possible.
+	if (track_id >= last_track_id || track_id == ret) { return std::nullopt; }
+	current_track_id = track_id;
+	return ret;
+}
+
 PlayerConnection::PlayerConnection(ekizu::VoiceConnectionConfig config,
 								   GuildQueue& queue)
 	: m_queue{queue}, m_config{std::move(config)} {}
@@ -168,24 +188,24 @@ Result<bool> Player::connect(ekizu::Snowflake guild_id,
 	return true;
 }
 
-Result<uint64_t> Player::play(ekizu::Snowflake guild_id, std::string_view query,
-							  ekizu::Snowflake requester_id,
-							  const asio::yield_context& yield) {
+Result<Track> Player::play(ekizu::Snowflake guild_id, std::string_view query,
+						   ekizu::Snowflake requester_id,
+						   const asio::yield_context& yield) {
 	if (!m_connections.has(guild_id)) {
 		return boost::system::errc::operation_not_permitted;
 	}
 
-	auto track_id = m_queues[guild_id].add_track();
+	auto track =
+		m_queues[guild_id].add_track({{}, requester_id, std::string{query}});
 
 	asio::spawn(
 		yield,
-		[this, guild_id, q = std::string{query}, requester_id,
-		 track_id](auto y) {
-			(void)play_sync(guild_id, q, requester_id, track_id, y);
+		[this, guild_id, q = track.url, requester_id, tid = track.id](auto y) {
+			(void)play_sync(guild_id, q, requester_id, tid, y);
 		},
 		asio::detached);
 
-	return track_id;
+	return track;
 }
 
 Result<> Player::pause(ekizu::Snowflake guild_id) {

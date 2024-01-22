@@ -54,15 +54,15 @@ struct Play : Command {
 
 		SABER_TRY(bot.player().connect(
 			*message.guild_id, *voice_state->channel_id, yield));
-		SABER_TRY(auto track_id, bot.player().play(*message.guild_id, query,
-												   message.author.id, yield));
+		SABER_TRY(auto track, bot.player().play(*message.guild_id, query,
+												message.author.id, yield));
 		SABER_TRY(auto current_track_id,
 				  bot.player().current_track_id(*message.guild_id));
 
 		auto description =
-			current_track_id != track_id
+			current_track_id != track.id
 				? fmt::format(
-					  "**✅ Added to queue\n** `{}` - `{}`", query, track_id)
+					  "**✅ Added to queue\n** `{}` - `{}`", query, track.id)
 				: fmt::format("**▶️ Started playing\n** `{}`", query);
 
 		auto embed = ekizu::EmbedBuilder().set_description(description).build();

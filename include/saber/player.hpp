@@ -11,31 +11,18 @@
 #include <saber/result.hpp>
 
 namespace saber {
+struct Track {
+	/// The ID of the track.
+	uint64_t id{};
+	/// The ID of the requester.
+	ekizu::Snowflake requester_id{};
+	/// To be replaced with an actual URL in the future.
+	std::string url{};
+};
+
 struct GuildQueue {
-	uint64_t add_track() {
-		auto ret = last_track_id++;
-		if (!current_track_id) { current_track_id = ret; }
-		return ret;
-	}
-
-	std::optional<uint64_t> skip(uint64_t track_id) {
-		// Check if we're playing and we're not the last track.
-		if (!current_track_id || current_track_id == last_track_id) {
-			return std::nullopt;
-		}
-
-		auto ret = *current_track_id;
-
-		// Check if track_id is within our bounds. Going backwards is possible.
-		if (track_id >= last_track_id || track_id == ret) {
-			return std::nullopt;
-		}
-
-		current_track_id = track_id;
-		fmt::println("Skipped from {} to {}", ret, track_id);
-		return ret;
-	}
-
+	Track add_track(Track track);
+	std::optional<uint64_t> skip(uint64_t track_id);
 	std::optional<uint64_t> skip() { return skip(*current_track_id + 1); }
 	std::optional<uint64_t> previous() { return skip(*current_track_id - 1); }
 
@@ -91,7 +78,7 @@ struct Player {
 									  ekizu::Snowflake channel_id,
 									  const boost::asio::yield_context& yield);
 
-	SABER_EXPORT Result<uint64_t> play(
+	SABER_EXPORT Result<Track> play(
 		ekizu::Snowflake guild_id, std::string_view query,
 		ekizu::Snowflake requester_id, const boost::asio::yield_context& yield);
 	SABER_EXPORT Result<> pause(ekizu::Snowflake guild_id);
