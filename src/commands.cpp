@@ -5,7 +5,6 @@
 #include <boost/unordered/unordered_flat_map.hpp>
 #include <filesystem>
 #include <saber/saber.hpp>
-#include <saber/util.hpp>
 
 namespace {
 #ifdef _WIN32
