@@ -22,9 +22,6 @@ struct Play : Command {
 	Result<> execute(const ekizu::Message &message,
 					 [[maybe_unused]] const std::vector<std::string> &args,
 					 const boost::asio::yield_context &yield) override {
-		SABER_TRY(
-			auto guild, bot.http().get_guild(*message.guild_id).send(yield));
-
 		auto voice_state =
 			bot.voice_states()
 				.get(*message.guild_id)
