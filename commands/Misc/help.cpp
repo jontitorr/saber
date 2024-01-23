@@ -30,8 +30,8 @@ struct Help : Command {
 					  .init(true)
 					  .usage("help")
 					  .examples({"help", "help ping"})
-					  .bot_permissions({ekizu::Permissions::SendMessages,
-										ekizu::Permissions::EmbedLinks})
+					  .bot_permissions(ekizu::Permissions::SendMessages |
+									   ekizu::Permissions::EmbedLinks)
 					  .cooldown(std::chrono::seconds(2))
 					  .build()) {}
 

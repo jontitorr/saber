@@ -11,8 +11,8 @@ struct Countdown : Command {
 					  .enabled(true)
 					  .usage("countdown")
 					  .description("Countdown from 5.")
-					  .bot_permissions({ekizu::Permissions::SendMessages,
-										ekizu::Permissions::EmbedLinks})
+					  .bot_permissions(ekizu::Permissions::SendMessages |
+									   ekizu::Permissions::EmbedLinks)
 					  .build()) {}
 
 	Result<> execute(const ekizu::Message &message,

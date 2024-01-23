@@ -10,8 +10,8 @@ struct CSS : Command {
 					  .category(DIRNAME)
 					  .enabled(true)
 					  .usage("css")
-					  .bot_permissions({ekizu::Permissions::SendMessages,
-										ekizu::Permissions::EmbedLinks})
+					  .bot_permissions(ekizu::Permissions::SendMessages |
+									   ekizu::Permissions::EmbedLinks)
 					  .build()) {}
 
 	Result<> execute(const ekizu::Message &message,

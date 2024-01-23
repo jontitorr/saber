@@ -68,8 +68,8 @@ struct CommandOptions {
 	std::vector<std::string> aliases;
 	std::string usage;
 	std::string description;
-	std::vector<ekizu::Permissions> member_permissions;
-	std::vector<ekizu::Permissions> bot_permissions;
+	ekizu::Permissions member_permissions;
+	ekizu::Permissions bot_permissions;
 	bool nsfw{};
 	bool owner_only{};
 	std::chrono::steady_clock::duration cooldown;
@@ -133,14 +133,13 @@ struct CommandOptionsBuilder {
 	}
 
 	CommandOptionsBuilder &member_permissions(
-		std::vector<ekizu::Permissions> member_permissions) {
-		m_options.member_permissions = std::move(member_permissions);
+		ekizu::Permissions member_permissions) {
+		m_options.member_permissions = member_permissions;
 		return *this;
 	}
 
-	CommandOptionsBuilder &bot_permissions(
-		std::vector<ekizu::Permissions> bot_permissions) {
-		m_options.bot_permissions = std::move(bot_permissions);
+	CommandOptionsBuilder &bot_permissions(ekizu::Permissions bot_permissions) {
+		m_options.bot_permissions = bot_permissions;
 		return *this;
 	}
 

@@ -1,10 +1,7 @@
-#include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/trim.hpp>
-#include <boost/range/adaptor/transformed.hpp>
-#include <boost/unordered/unordered_flat_map.hpp>
 #include <filesystem>
-#include <saber/saber.hpp>
+#include <saber/util.hpp>
 
 namespace {
 #ifdef _WIN32
@@ -14,63 +11,6 @@ constexpr boost::string_view LIBRARY_EXTENSION{".so"};
 #elif __APPLE__
 constexpr boost::string_view LIBRARY_EXTENSION{".dylib"};
 #endif
-
-using ekizu::Permissions;
-
-std::string permissions_to_string(Permissions permission) {
-	static const boost::unordered_flat_map<Permissions, std::string_view>
-		permission_strings{
-			{Permissions::CreateInstantInvite, "CREATE_INSTANT_INVITE"},
-			{Permissions::KickMembers, "KICK_MEMBERS"},
-			{Permissions::BanMembers, "BAN_MEMBERS"},
-			{Permissions::Administrator, "ADMINISTRATOR"},
-			{Permissions::ManageChannels, "MANAGE_CHANNELS"},
-			{Permissions::ManageGuild, "MANAGE_GUILD"},
-			{Permissions::AddReactions, "ADD_REACTIONS"},
-			{Permissions::ViewAuditLog, "VIEW_AUDIT_LOG"},
-			{Permissions::PrioritySpeaker, "PRIORITY_SPEAKER"},
-			{Permissions::Stream, "STREAM"},
-			{Permissions::ViewChannel, "VIEW_CHANNEL"},
-			{Permissions::SendMessages, "SEND_MESSAGES"},
-			{Permissions::SendTTSMessages, "SEND_TTS_MESSAGES"},
-			{Permissions::ManageMessages, "MANAGE_MESSAGES"},
-			{Permissions::EmbedLinks, "EMBED_LINKS"},
-			{Permissions::AttachFiles, "ATTACH_FILES"},
-			{Permissions::ReadMessageHistory, "READ_MESSAGE_HISTORY"},
-			{Permissions::MentionEveryone, "MENTION_EVERYONE"},
-			{Permissions::UseExternalEmojis, "USE_EXTERNAL_EMOJIS"},
-			{Permissions::ViewGuildInsights, "VIEW_GUILD_INSIGHTS"},
-			{Permissions::Connect, "CONNECT"},
-			{Permissions::Speak, "SPEAK"},
-			{Permissions::MuteMembers, "MUTE_MEMBERS"},
-			{Permissions::DeafenMembers, "DEAFEN_MEMBERS"},
-			{Permissions::MoveMembers, "MOVE_MEMBERS"},
-			{Permissions::UseVAD, "USE_VAD"},
-			{Permissions::ChangeNickname, "CHANGE_NICKNAME"},
-			{Permissions::ManageNicknames, "MANAGE_NICKNAMES"},
-			{Permissions::ManageRoles, "MANAGE_ROLES"},
-			{Permissions::ManageWebhooks, "MANAGE_WEBHOOKS"},
-			{Permissions::ManageGuildExpressions, "MANAGE_GUILD_EXPRESSIONS"},
-			{Permissions::UseApplicationCommands, "USE_APPLICATION_COMMANDS"},
-			{Permissions::RequestToSpeak, "REQUEST_TO_SPEAK"},
-			{Permissions::ManageEvents, "MANAGE_EVENTS"},
-			{Permissions::ManageThreads, "MANAGE_THREADS"},
-			{Permissions::CreatePublicThreads, "CREATE_PUBLIC_THREADS"},
-			{Permissions::CreatePrivateThreads, "CREATE_PRIVATE_THREADS"},
-			{Permissions::UseExternalStickers, "USE_EXTERNAL_STICKERS"},
-			{Permissions::SendMessagesInThreads, "SEND_MESSAGES_IN_THREADS"},
-			{Permissions::UseEmbeddedActivities, "USE_EMBEDDED_ACTIVITIES"},
-			{Permissions::ModerateMembers, "MODERATE_MEMBERS"},
-			{Permissions::ViewCreatorMonetizationAnalytics,
-			 "VIEW_CREATOR_MONETIZATION_ANALYTICS"},
-			{Permissions::UseSoundboard, "USE_SOUNDBOARD"},
-			{Permissions::UseExternalSounds, "USE_EXTERNAL_SOUNDS"},
-			{Permissions::SendVoiceMessages, "SEND_VOICE_MESSAGES"}};
-
-	auto it = permission_strings.find(permission);
-	return (it != permission_strings.end()) ? std::string{it->second}
-											: "UNKNOWN";
-}
 }  // namespace
 
 namespace saber {
@@ -181,69 +121,12 @@ Result<> CommandLoader::process_commands(
 						  .send(yield));
 			return outcome::success();
 		}
-
-		auto bot_permissions = m_parent.get_guild_permissions(
-			*message.guild_id, m_parent.bot_id());
-
-		if (!bot_permissions) {
-			SABER_TRY(m_parent.http()
-						  .create_message(message.channel_id)
-						  .content("Failed to get bot permissions.")
-						  .reply(message.id)
-						  .send(yield));
-			return outcome::success();
-		}
-
-		// Check permissions.
-		for (const auto &perm : cmd->options.bot_permissions) {
-			if ((bot_permissions.value() & perm) != perm) {
-				SABER_TRY(
-					m_parent.http()
-						.create_message(message.channel_id)
-						.content(fmt::format(
-							"Needed permissions: {}",
-							boost::algorithm::trim_copy(boost::algorithm::join(
-								cmd->options.bot_permissions |
-									boost::adaptors::transformed(
-										permissions_to_string),
-								", "))))
-						.reply(message.id)
-						.send(yield));
-				return outcome::success();
-			}
-		}
-
-		// Check member permissions
-		auto member_permissions = m_parent.get_guild_permissions(
-			*message.guild_id, message.author.id);
-
-		if (!member_permissions) {
-			SABER_TRY(m_parent.http()
-						  .create_message(message.channel_id)
-						  .content("Failed to get member permissions.")
-						  .reply(message.id)
-						  .send(yield));
-			return outcome::success();
-		}
-
-		for (const auto &perm : cmd->options.member_permissions) {
-			if ((member_permissions.value() & perm) != perm) {
-				SABER_TRY(
-					m_parent.http()
-						.create_message(message.channel_id)
-						.content(fmt::format(
-							"You need the following permissions: {}",
-							boost::algorithm::trim_copy(boost::algorithm::join(
-								cmd->options.member_permissions |
-									boost::adaptors::transformed(
-										permissions_to_string),
-								", "))))
-						.reply(message.id)
-						.send(yield));
-				return outcome::success();
-			}
-		}
 	}
+
+	SABER_TRY(util::ensure_permissions(m_parent, message, m_parent.bot_id(),
+									   cmd->options.bot_permissions, yield));
+	SABER_TRY(util::ensure_permissions(m_parent, message, message.author.id,
+									   cmd->options.member_permissions, yield));
 
 	if (m_parent.command_cooldowns().contains(message.author.id)) {
 		auto cooldown = m_parent.command_cooldowns().at(message.author.id);

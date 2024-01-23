@@ -13,8 +13,8 @@ struct Hype : Command {
 					  .aliases({"hypu", "train"})
 					  .usage("hype")
 					  .description("Hype someone.")
-					  .bot_permissions({ekizu::Permissions::SendMessages,
-										ekizu::Permissions::EmbedLinks})
+					  .bot_permissions(ekizu::Permissions::SendMessages |
+									   ekizu::Permissions::EmbedLinks)
 					  .cooldown(std::chrono::seconds(3))
 					  .build()) {}
 

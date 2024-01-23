@@ -13,8 +13,8 @@ struct About : Command {
 					  .init(true)
 					  .usage("about")
 					  .description("Info about me.")
-					  .bot_permissions({ekizu::Permissions::SendMessages,
-										ekizu::Permissions::EmbedLinks})
+					  .bot_permissions(ekizu::Permissions::SendMessages |
+									   ekizu::Permissions::EmbedLinks)
 					  .cooldown(std::chrono::seconds(2))
 					  .build()) {}
 

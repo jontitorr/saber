@@ -11,8 +11,8 @@ struct Ping : Command {
 					  .enabled(true)
 					  .usage("ping")
 					  .description("Replies with pong.")
-					  .bot_permissions({ekizu::Permissions::SendMessages,
-										ekizu::Permissions::EmbedLinks})
+					  .bot_permissions(ekizu::Permissions::SendMessages |
+									   ekizu::Permissions::EmbedLinks)
 					  .cooldown(std::chrono::seconds(3))
 					  .build()) {}
 

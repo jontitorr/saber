@@ -12,8 +12,8 @@ struct Skip : Command {
 					  .guild_only(true)
 					  .usage("skip")
 					  .description("Skips the current song.")
-					  .bot_permissions({ekizu::Permissions::SendMessages,
-										ekizu::Permissions::EmbedLinks})
+					  .bot_permissions(ekizu::Permissions::SendMessages |
+									   ekizu::Permissions::EmbedLinks)
 					  .cooldown(std::chrono::seconds(3))
 					  .build()) {}
 

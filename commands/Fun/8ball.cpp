@@ -14,8 +14,8 @@ struct Eightball : Command {
 				  .aliases({"eight-ball", "eightball"})
 				  .usage("8ball <question>")
 				  .description("Asks the Magic 8-Ball for some psychic wisdom.")
-				  .bot_permissions({ekizu::Permissions::SendMessages,
-									ekizu::Permissions::EmbedLinks})
+				  .bot_permissions(ekizu::Permissions::SendMessages |
+								   ekizu::Permissions::EmbedLinks)
 				  .cooldown(std::chrono::seconds(3))
 				  .build()) {}
 

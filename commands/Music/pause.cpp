@@ -12,8 +12,8 @@ struct Pause : Command {
 					  .guild_only(true)
 					  .usage("pause")
 					  .description("Pauses the player.")
-					  .bot_permissions({ekizu::Permissions::SendMessages,
-										ekizu::Permissions::EmbedLinks})
+					  .bot_permissions(ekizu::Permissions::SendMessages |
+									   ekizu::Permissions::EmbedLinks)
 					  .cooldown(std::chrono::seconds(3))
 					  .build()) {}
 

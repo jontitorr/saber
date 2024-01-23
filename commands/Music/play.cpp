@@ -14,8 +14,8 @@ struct Play : Command {
 					  .guild_only(true)
 					  .usage("play <query>")
 					  .description("Play a youtube video in the voice channel.")
-					  .bot_permissions({ekizu::Permissions::SendMessages,
-										ekizu::Permissions::EmbedLinks})
+					  .bot_permissions(ekizu::Permissions::SendMessages |
+									   ekizu::Permissions::EmbedLinks)
 					  .cooldown(std::chrono::seconds(3))
 					  .build()) {}
 

@@ -12,8 +12,8 @@ struct Previous : Command {
 					  .guild_only(true)
 					  .usage("previous")
 					  .description("Go to the previous song.")
-					  .bot_permissions({ekizu::Permissions::SendMessages,
-										ekizu::Permissions::EmbedLinks})
+					  .bot_permissions(ekizu::Permissions::SendMessages |
+									   ekizu::Permissions::EmbedLinks)
 					  .cooldown(std::chrono::seconds(3))
 					  .build()) {}
 

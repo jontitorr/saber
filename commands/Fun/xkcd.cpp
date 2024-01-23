@@ -11,8 +11,8 @@ struct XKCD : Command {
 					  .category(DIRNAME)
 					  .enabled(true)
 					  .usage("xkcd")
-					  .bot_permissions({ekizu::Permissions::SendMessages,
-										ekizu::Permissions::EmbedLinks})
+					  .bot_permissions(ekizu::Permissions::SendMessages |
+									   ekizu::Permissions::EmbedLinks)
 					  .build()) {}
 
 	Result<> execute(const ekizu::Message &message,

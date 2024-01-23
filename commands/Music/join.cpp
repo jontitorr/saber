@@ -12,8 +12,8 @@ struct Join : Command {
 					  .guild_only(true)
 					  .usage("join")
 					  .description("Joins the voice channel.")
-					  .bot_permissions({ekizu::Permissions::SendMessages,
-										ekizu::Permissions::EmbedLinks})
+					  .bot_permissions(ekizu::Permissions::SendMessages |
+									   ekizu::Permissions::EmbedLinks)
 					  .cooldown(std::chrono::seconds(3))
 					  .build()) {}
 

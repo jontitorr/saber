@@ -15,8 +15,8 @@ struct Hentai : Command {
 					  .category(DIRNAME)
 					  .enabled(true)
 					  .init(true)
-					  .bot_permissions({ekizu::Permissions::SendMessages,
-										ekizu::Permissions::EmbedLinks})
+					  .bot_permissions(ekizu::Permissions::SendMessages |
+									   ekizu::Permissions::EmbedLinks)
 					  .cooldown(std::chrono::seconds(2))
 					  .build()),
 		  m_reddit{RedditOptions{
