@@ -107,10 +107,15 @@ Result<> CommandLoader::process_commands(
 		[](uint8_t c) { return static_cast<char>(std::tolower(c)); });
 
 	std::unique_lock lk{m_mtx};
+	std::shared_ptr<Command> cmd;
 
-	if (!command_map.contains(command_name)) { return outcome::success(); }
+	if (commands.contains(command_name)) {
+		cmd = command_map.at(command_name);
+	} else if (alias_map.contains(command_name)) {
+		cmd = alias_map.at(command_name);
+	}
 
-	auto cmd = command_map.at(command_name);
+	if (!cmd) { return outcome::success(); }
 
 	if (cmd->options.guild_only) {
 		if (!message.guild_id) {
