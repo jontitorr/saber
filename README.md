@@ -1,44 +1,52 @@
-# Saber
+![logo](https://repository-images.githubusercontent.com/713756230/2e83893d-9aea-43c6-a0b7-3ed4f40da182)
 
-A WIP Discord bot written in C++
+# ⚔️ Saber (Discord Bot)
 
-## Features
+> Saber is a Discord Bot built with C++ and the [ekizu](https://github.com/jontitorr/ekizu) library.
 
-- Low memory footprint
-- Commands system, with commands that can be loaded at runtime
+## Requirements
 
-## Getting Started
-
-### Prerequisites
-
-- [CMake](https://cmake.org/download/) (version >= 3.16)
+- Discord Bot Token (**[Guide](https://jontitorr.github.io/ekizu/creating-a-bot-token/)**)
+  - Enable 'Message Content Intent' in Discord Developer Portal
 - Compiler with C++17 support, i.e. MSVC, GCC, Clang
+- [Ekizu](https://github.com/jontitorr/ekizu)
+- [CMake](https://cmake.org/) (version >= 3.16)
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp)
+- [ffmpeg](https://ffmpeg.org/)
 
-### Installing
+## 🚀 Getting Started
 
-This application uses [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake) to manage dependencies. It is an amazing package manager for CMake projects and allows us to install the entire library using the following commands:
-
-```bash
-  git clone https://www.github.com/jontitorr/saber
-  cd saber
-  cmake -S . -B build
-  cmake --build build --target install
+```sh
+git clone https://www.github.com/jontitorr/saber
+cd saber
+cmake -S . -B build
+cmake --build build --target install --prefix $HOME/.local # or wherever you want
 ```
 
-## Contributing
+If you would like to install a binary instead, check out the [releases](https://github.com/jontitorr/saber/releases).
 
-Contributions, issues and feature requests are welcome. After cloning and setting up project locally, you can just submit
-a PR to this repo and it will be deployed once it's accepted.
+After installation finishes follow the configuration instructions, then run the bot by running the `saber` executable.
 
-Take full advantage of the [.clang-format](.clang-format) file located in the root of the project to ensure that your code is properly formatted.
+## ⚙️ Configuration
 
-## Dependencies
+Copy or Rename `config.json.example` to `config.json` and fill out the values:
 
-### Third party Dependencies
+⚠️ **Note: Never commit or share your token or api keys publicly** ⚠️
 
-- [ekizu](https://github.com/jontitorr/ekizu) - C++ library for Discord API
-- [spdlog](https://github.com/gabime/spdlog) - C++ logging library
+```json
+{
+  "token": "YOUR_TOKEN_HERE",
+  "prefix": "!",
+  "owner_id": "12345678910",
+}
+```
 
-## License
+## 🤝 Contributing
 
-[MIT](https://choosealicense.com/licenses/mit/)
+1. [Fork the repository](https://github.com/jontitorr/saber/fork)
+2. Clone your fork: `git clone https://github.com/your-username/saber.git`
+3. Create your feature branch: `git checkout -b my-new-feature`
+4. Stage changes `git add .`
+5. Commit your changes: `git commit`
+6. Push to the branch: `git push origin my-new-feature`
+7. Submit a pull request
